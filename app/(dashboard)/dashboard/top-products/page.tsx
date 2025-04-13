@@ -64,6 +64,23 @@ export default async function TopProductsPage() {
     .sort((a, b) => b.totalRevenue - a.totalRevenue)
     .slice(0, 10) // Get top 10
 
+  // Format products for the table component
+  const formatProductsForTable = (products: typeof productsWithMetrics) => products.map(product => ({
+    id: product.id,
+    name: product.name,
+    stock: product.stock,
+    price: Number(product.price),
+    totalQuantitySold: product.totalQuantitySold,
+    totalRevenue: product.totalRevenue,
+    category: {
+      name: product.category.name
+    },
+    Image: product.Image
+  }))
+
+  const formattedTopSellingProducts = formatProductsForTable(topSellingProducts)
+  const formattedTopRevenueProducts = formatProductsForTable(topRevenueProducts)
+
   // Calculate total revenue and total items sold
   const totalRevenue = productsWithMetrics.reduce(
     (sum, product) => sum + product.totalRevenue, 
@@ -135,7 +152,7 @@ export default async function TopProductsPage() {
             <div className='text-center py-6 text-muted-foreground'>No sales data available</div>
           ) : (
             <TopProductsTable 
-              products={topSellingProducts} 
+              products={formattedTopSellingProducts} 
               metric="quantity" 
               title="Best-Selling Products"
             />
@@ -155,7 +172,7 @@ export default async function TopProductsPage() {
             <div className='text-center py-6 text-muted-foreground'>No revenue data available</div>
           ) : (
             <TopProductsTable 
-              products={topRevenueProducts} 
+              products={formattedTopRevenueProducts} 
               metric="revenue" 
               title="Highest Revenue Products"
             />

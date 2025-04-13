@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
+import crypto from 'crypto'
+
+type tParams = Promise<{ id: string }>
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
@@ -14,7 +17,7 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    const id = params.id
+    const { id } = await params
     
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({

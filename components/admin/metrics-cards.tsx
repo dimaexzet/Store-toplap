@@ -16,28 +16,35 @@ async function getMetrics() {
 
     // Get current date and date for last month
     const now = new Date()
-    const lastMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      now.getDate()
-    )
+    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const lastHour = new Date(now.getTime() - 60 * 60 * 1000)
 
     // Get total revenue and compare with last month
-    const [totalRevenue, lastMonthRevenue] = await Promise.all([
-      prisma.order.aggregate({
-        where: { status: OrderStatus.DELIVERED },
-        _sum: { total: true },
-      }),
-      prisma.order.aggregate({
-        where: {
-          status: OrderStatus.DELIVERED,
-          createdAt: { lt: now, gte: lastMonth },
+    const totalRevenue = await prisma.order.aggregate({
+      _sum: {
+        total: true,
+      },
+      where: {
+        createdAt: {
+          gte: firstDayThisMonth,
         },
-        _sum: { total: true },
-      }),
-    ])
+      },
+    })
+
+    // Get last month's revenue
+    const lastMonthRevenue = await prisma.order.aggregate({
+      _sum: {
+        total: true,
+      },
+      where: {
+        createdAt: {
+          gte: firstDayLastMonth,
+          lt: firstDayThisMonth,
+        },
+      },
+    })
 
     // Get total orders and compare with last hour
     const [totalOrders, lastHourOrders] = await Promise.all([
@@ -55,7 +62,7 @@ async function getMetrics() {
       prisma.user.count({
         where: {
           role: Role.USER,
-          createdAt: { lt: now, gte: lastMonth },
+          createdAt: { lt: now, gte: firstDayLastMonth },
         },
       }),
     ])
@@ -75,10 +82,10 @@ async function getMetrics() {
       }),
     ])
 
-    const totalRevenueCurrent = totalRevenue._sum.total || 0
-    const lastMonthRevenueCurrent = lastMonthRevenue._sum.total || 0
-    const currentAOVValue = currentAOV._avg.total || 0
-    const lastWeekAOVValue = lastWeekAOV._avg.total || 0
+    const totalRevenueCurrent = Number(totalRevenue._sum.total || 0)
+    const lastMonthRevenueCurrent = Number(lastMonthRevenue._sum.total || 0)
+    const currentAOVValue = Number(currentAOV._avg.total || 0)
+    const lastWeekAOVValue = Number(lastWeekAOV._avg.total || 0)
 
     // Calculate percentage changes
     const revenueChange = lastMonthRevenueCurrent

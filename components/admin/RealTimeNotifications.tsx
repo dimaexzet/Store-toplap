@@ -72,19 +72,11 @@ export default function RealTimeNotifications() {
       total: 199.99
     };
     
-    if (isRealtime) {
-      socket?.emit('new-order', testOrder);
-      toast({
-        title: 'Test Notification',
-        description: 'A test notification has been sent',
-      });
-    } else {
-      emitNewOrder(testOrder);
-      toast({
-        title: 'Test Notification',
-        description: 'A mock notification has been created',
-      });
-    }
+    emitNewOrder(testOrder);
+    toast({
+      title: 'Test Notification',
+      description: 'A test notification has been sent',
+    });
   };
 
   useEffect(() => {

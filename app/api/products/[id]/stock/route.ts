@@ -1,83 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
 import prisma from '@/lib/prisma'
+import { auth } from '@/auth'
+
+type tParams = Promise<{ id: string }>
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
     
-    // Check if user is authenticated
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'You must be logged in to update product stock' },
-        { status: 401 }
-      )
+    // Check if user is authenticated and is an admin
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: {
-        id: session.user.id,
-      },
-    })
-
-    if (user?.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'You do not have permission to update product stock' },
-        { status: 403 }
-      )
+    const { id } = await params
+    const { stock } = await req.json()
+    
+    // Validate stock value
+    if (stock === undefined || typeof stock !== 'number' || stock < 0) {
+      return new NextResponse('Invalid stock value', { status: 400 })
     }
-
-    const productId = params.id
     
     // Check if product exists
     const product = await prisma.product.findUnique({
-      where: {
-        id: productId,
-      },
+      where: { id },
     })
-
+    
     if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      )
+      return new NextResponse('Product not found', { status: 404 })
     }
-
-    // Get the new stock value from the request body
-    const body = await req.json()
-    const { stock } = body
-
-    // Validate stock value
-    if (typeof stock !== 'number' || stock < 0) {
-      return NextResponse.json(
-        { error: 'Invalid stock value' },
-        { status: 400 }
-      )
-    }
-
-    // Update the product stock
+    
+    // Update stock
     const updatedProduct = await prisma.product.update({
-      where: {
-        id: productId,
-      },
-      data: {
-        stock,
-      },
+      where: { id },
+      data: { stock },
     })
-
-    return NextResponse.json({
-      product: updatedProduct,
-      message: 'Product stock updated successfully',
-    })
+    
+    return NextResponse.json(updatedProduct)
   } catch (error) {
     console.error('Error updating product stock:', error)
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    )
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

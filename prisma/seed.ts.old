@@ -38,8 +38,6 @@ async function main() {
     update: {},
     create: {
       name: 'T-shirts',
-      description: 'Comfortable and stylish t-shirts',
-      image: '/images/c-tshirts.jpg',
     },
   })
 
@@ -48,8 +46,6 @@ async function main() {
     update: {},
     create: {
       name: 'Jeans',
-      description: 'Classic and trendy jeans',
-      image: '/images/c-jeans.jpg',
     },
   })
 
@@ -58,8 +54,6 @@ async function main() {
     update: {},
     create: {
       name: 'Shoes',
-      description: 'Comfortable and stylish shoes',
-      image: '/images/c-shoes.jpg',
     },
   })
 

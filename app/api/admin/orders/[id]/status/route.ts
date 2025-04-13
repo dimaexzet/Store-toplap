@@ -4,37 +4,34 @@ import { auth } from '@/auth'
 import { OrderStatus } from '@prisma/client'
 import { sendShippingUpdateEmail } from '@/lib/email'
 
+type tParams = Promise<{ id: string }>
+
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
     
-    // Check authentication and admin role
+    // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== 'ADMIN') {
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    const body = await req.json()
-    const { status, trackingNumber } = body
+    const { id } = await params
+    const { status, trackingNumber } = await req.json()
     
-    // Validate status
+    // Validate status value
     if (!status || !Object.values(OrderStatus).includes(status)) {
-      return new NextResponse('Invalid status value', { status: 400 })
+      return new NextResponse('Invalid order status', { status: 400 })
     }
     
-    const id = params.id
-    
-    // Check if order exists and get user information
-    const existingOrder = await prisma.order.findUnique({
+    // Check if order exists
+    const order = await prisma.order.findUnique({
       where: { id },
-      include: {
-        user: true
-      }
     })
     
-    if (!existingOrder) {
+    if (!order) {
       return new NextResponse('Order not found', { status: 404 })
     }
     
@@ -42,24 +39,42 @@ export async function PATCH(
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: { 
-        status: status as OrderStatus,
-        // If tracking number is provided and status is SHIPPED, update it
+        status,
         ...(trackingNumber && status === OrderStatus.SHIPPED ? { trackingNumber } : {})
+      },
+      include: {
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        Address: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     })
     
-    // Send shipping update email if user has an email
-    if (existingOrder.user?.email) {
-      await sendShippingUpdateEmail(
-        existingOrder.user.email,
-        existingOrder.user.name || 'Customer',
-        id,
-        status,
-        trackingNumber
-      ).catch(error => {
-        console.error('Failed to send shipping update email:', error);
-        // Continue with the update even if email fails
-      });
+    // Send shipping update email if status is updated to SHIPPED
+    if (status === OrderStatus.SHIPPED && updatedOrder.user?.email && process.env.RESEND_API_KEY) {
+      try {
+        await sendShippingUpdateEmail(
+          updatedOrder.user.email,
+          updatedOrder.user.name || 'Customer',
+          id,
+          status,
+          trackingNumber
+        )
+      } catch (emailError) {
+        console.error('Failed to send shipping update email:', emailError)
+        // Continue with the order update even if email fails
+      }
+    } else if (status === OrderStatus.SHIPPED && !process.env.RESEND_API_KEY) {
+      // Log that email sending was skipped due to missing API key
+      console.warn('Shipping update email not sent - Resend API key is missing')
     }
     
     return NextResponse.json(updatedOrder)

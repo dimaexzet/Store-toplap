@@ -2,174 +2,145 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+type tParams = Promise<{ id: string }>;
+
 // GET /api/admin/categories/[id] - Get category by ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth();
-    const { id } = params;
-
+    
     // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== "ADMIN") {
-      return new NextResponse(
-        JSON.stringify({ message: "Unauthorized" }),
-        { status: 401 }
-      );
+      return new NextResponse("Unauthorized", { status: 401 });
     }
-
+    
+    const { id } = await params;
+    
+    // Retrieve category
     const category = await prisma.category.findUnique({
       where: { id },
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
     });
-
+    
     if (!category) {
-      return new NextResponse(
-        JSON.stringify({ message: "Category not found" }),
-        { status: 404 }
-      );
+      return new NextResponse("Category not found", { status: 404 });
     }
-
+    
     return NextResponse.json(category);
   } catch (error) {
-    console.error("[CATEGORY_GET]", error);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal server error" }),
-      { status: 500 }
-    );
+    console.error("Error fetching category:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
 
 // PATCH /api/admin/categories/[id] - Update category
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth();
-    const { id } = params;
-
+    
     // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== "ADMIN") {
-      return new NextResponse(
-        JSON.stringify({ message: "Unauthorized" }),
-        { status: 401 }
-      );
+      return new NextResponse("Unauthorized", { status: 401 });
     }
-
-    const body = await req.json();
-    const { name } = body;
-
-    if (!name || !name.trim()) {
-      return new NextResponse(
-        JSON.stringify({ message: "Category name is required" }),
-        { status: 400 }
-      );
+    
+    const { id } = await params;
+    const { name } = await req.json();
+    
+    // Validate request data
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      return new NextResponse("Invalid category name", { status: 400 });
     }
-
+    
     // Check if category exists
     const existingCategory = await prisma.category.findUnique({
       where: { id },
     });
-
+    
     if (!existingCategory) {
-      return new NextResponse(
-        JSON.stringify({ message: "Category not found" }),
-        { status: 404 }
-      );
+      return new NextResponse("Category not found", { status: 404 });
     }
-
-    // Check if another category with the same name exists
-    const duplicateCategory = await prisma.category.findFirst({
+    
+    // Check if name already exists (excluding current category)
+    const nameExists = await prisma.category.findFirst({
       where: {
-        name: name.trim(),
-        id: { not: id },
+        name: {
+          equals: name,
+          mode: "insensitive",
+        },
+        id: {
+          not: id,
+        },
       },
     });
-
-    if (duplicateCategory) {
-      return new NextResponse(
-        JSON.stringify({ message: "A category with this name already exists" }),
-        { status: 400 }
-      );
+    
+    if (nameExists) {
+      return new NextResponse("Category name already exists", { status: 400 });
     }
-
-    // Update the category
+    
+    // Update category
     const updatedCategory = await prisma.category.update({
       where: { id },
-      data: { name: name.trim() },
+      data: { name },
     });
-
+    
     return NextResponse.json(updatedCategory);
   } catch (error) {
-    console.error("[CATEGORY_PATCH]", error);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal server error" }),
-      { status: 500 }
-    );
+    console.error("Error updating category:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
 
 // DELETE /api/admin/categories/[id] - Delete category
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth();
-    const { id } = params;
-
+    
     // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== "ADMIN") {
-      return new NextResponse(
-        JSON.stringify({ message: "Unauthorized" }),
-        { status: 401 }
-      );
+      return new NextResponse("Unauthorized", { status: 401 });
     }
-
+    
+    const { id } = await params;
+    
     // Check if category exists
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
-        _count: {
-          select: { products: true },
+        products: {
+          select: { id: true },
+          take: 1,
         },
       },
     });
-
+    
     if (!category) {
-      return new NextResponse(
-        JSON.stringify({ message: "Category not found" }),
-        { status: 404 }
-      );
+      return new NextResponse("Category not found", { status: 404 });
     }
-
+    
     // Check if category has products
-    if (category._count.products > 0) {
+    if (category.products.length > 0) {
       return new NextResponse(
-        JSON.stringify({
-          message: "Cannot delete category with products. Remove or reassign products first.",
-        }),
+        "Cannot delete category with associated products",
         { status: 400 }
       );
     }
-
-    // Delete the category
+    
+    // Delete category
     await prisma.category.delete({
       where: { id },
     });
-
+    
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("[CATEGORY_DELETE]", error);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal server error" }),
-      { status: 500 }
-    );
+    console.error("Error deleting category:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 } 

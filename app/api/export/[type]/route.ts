@@ -33,200 +33,185 @@ function convertToCSV(data: any[], columns: string[]): string {
   return header + '\n' + rows
 }
 
+type tParams = Promise<{ type: string }>
+
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { type: string } }
+  req: NextRequest,
+  { params }: { params: tParams }
 ) {
-  const session = await auth()
-  
-  // Check authentication and admin role
-  if (!session?.user || session.user.role !== 'ADMIN') {
-    return new NextResponse('Unauthorized', { status: 401 })
-  }
-  
   try {
-    const body = await request.json()
-    const { startDate, endDate, format = 'csv' } = body
-    const type = await params.type
+    const session = await auth()
     
-    if (!startDate || !endDate) {
-      return new NextResponse('Missing date range', { status: 400 })
+    // Check if user is authenticated and is an admin
+    if (!session?.user || session.user.role !== 'ADMIN') {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    let data: any[] = []
-    let columns: string[] = []
+    const { type } = await params
+    const { format = 'csv', dateRange } = await req.json()
     
-    // Fetch the requested data type
-    switch (type) {
-      case 'orders':
-        data = await prisma.order.findMany({
-          where: {
-            createdAt: {
-              gte: new Date(startDate),
-              lte: new Date(endDate),
-            },
-          },
-          select: {
-            id: true,
-            status: true,
-            total: true,
-            createdAt: true,
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        })
-        
-        // Transform data for CSV output
-        data = data.map(order => ({
-          id: order.id,
-          customerName: order.user?.name,
-          customerEmail: order.user?.email,
-          status: order.status,
-          total: Number(order.total),
-          createdAt: order.createdAt,
-        }))
-        
-        columns = ['id', 'customerName', 'customerEmail', 'status', 'total', 'createdAt']
-        break
-        
-      case 'products':
-        data = await prisma.product.findMany({
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            stock: true,
-            category: {
-              select: {
-                name: true,
-              },
-            },
-            createdAt: true,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        })
-        
-        // Transform data for CSV output
-        data = data.map(product => ({
-          id: product.id,
-          name: product.name,
-          category: product.category.name,
-          price: Number(product.price),
-          stock: product.stock,
-          createdAt: product.createdAt,
-        }))
-        
-        columns = ['id', 'name', 'category', 'price', 'stock', 'createdAt']
-        break
-        
-      case 'customers':
-        data = await prisma.user.findMany({
-          where: {
-            role: 'USER',
-            createdAt: {
-              gte: new Date(startDate),
-              lte: new Date(endDate),
-            },
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            createdAt: true,
-            orders: {
-              select: {
-                id: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        })
-        
-        // Transform data for CSV output
-        data = data.map(user => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          orderCount: user.orders.length,
-          createdAt: user.createdAt,
-        }))
-        
-        columns = ['id', 'name', 'email', 'orderCount', 'createdAt']
-        break
-        
-      case 'revenue':
-        // Get daily revenue in date range
-        const orders = await prisma.order.findMany({
-          where: {
-            status: OrderStatus.DELIVERED,
-            createdAt: {
-              gte: new Date(startDate),
-              lte: new Date(endDate),
-            },
-          },
-          select: {
-            total: true,
-            createdAt: true,
-          },
-        })
-        
-        // Aggregate revenue by date
-        const revenueByDate = orders.reduce((acc, order) => {
-          const date = dateFormat(order.createdAt, 'yyyy-MM-dd')
-          acc[date] = (acc[date] || 0) + Number(order.total)
-          return acc
-        }, {} as Record<string, number>)
-        
-        // Transform to array for CSV
-        data = Object.entries(revenueByDate).map(([date, amount]) => ({
-          date,
-          revenue: amount,
-        }))
-        
-        columns = ['date', 'revenue']
-        break
-        
-      default:
-        return new NextResponse(`Invalid export type: ${type}`, { status: 400 })
+    // Validate export type
+    const validTypes = ['orders', 'products', 'customers', 'reviews']
+    if (!validTypes.includes(type)) {
+      return new NextResponse(`Invalid export type: ${type}`, { status: 400 })
     }
     
-    if (format === 'csv') {
-      // Generate CSV data
-      const csv = convertToCSV(data, columns)
+    // Validate format
+    const validFormats = ['csv', 'json']
+    if (!validFormats.includes(format)) {
+      return new NextResponse(`Invalid format: ${format}`, { status: 400 })
+    }
+    
+    // Process date range if provided
+    let dateFilter = {}
+    if (dateRange?.startDate && dateRange?.endDate) {
+      dateFilter = {
+        createdAt: {
+          gte: new Date(dateRange.startDate),
+          lte: new Date(dateRange.endDate),
+        },
+      }
+    }
+    
+    // Get data based on type
+    let data: any = []
+    
+    if (type === 'orders') {
+      data = await prisma.order.findMany({
+        where: dateFilter,
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          items: {
+            include: {
+              product: true,
+            },
+          },
+          Address: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
       
-      // Set response headers for download
+      // Format the data for export
+      data = data.map((order: any) => ({
+        id: order.id,
+        date: order.createdAt.toISOString(),
+        customer: order.user?.name || 'Guest',
+        email: order.user?.email || 'N/A',
+        status: order.status,
+        total: Number(order.total),
+        items: order.items.length,
+        shipping: order.Address 
+          ? `${order.Address.street}, ${order.Address.city}, ${order.Address.country}` 
+          : 'N/A',
+      }))
+    } 
+    else if (type === 'products') {
+      data = await prisma.product.findMany({
+        include: {
+          category: true,
+          _count: {
+            select: { orderItems: true, reviews: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      
+      // Format the data for export
+      data = data.map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        category: product.category.name,
+        price: Number(product.price),
+        stock: product.stock,
+        orders: product._count.orderItems,
+        reviews: product._count.reviews,
+        featured: product.featured ? 'Yes' : 'No',
+      }))
+    } 
+    else if (type === 'customers') {
+      data = await prisma.user.findMany({
+        where: dateFilter,
+        include: {
+          _count: {
+            select: { orders: true, reviews: true },
+          },
+          orders: {
+            select: {
+              total: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      
+      // Format the data for export
+      data = data.map((user: any) => ({
+        id: user.id,
+        name: user.name || 'N/A',
+        email: user.email,
+        joined: user.createdAt.toISOString(),
+        orders: user._count.orders,
+        reviews: user._count.reviews,
+        totalSpent: user.orders.reduce((sum: number, order: any) => sum + Number(order.total), 0),
+      }))
+    } 
+    else if (type === 'reviews') {
+      data = await prisma.review.findMany({
+        where: dateFilter,
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          product: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      
+      // Format the data for export
+      data = data.map((review: any) => ({
+        id: review.id,
+        date: review.createdAt.toISOString(),
+        product: review.product.name,
+        customer: review.user.name || 'Guest',
+        rating: review.rating,
+        comment: review.comment || 'No comment',
+      }))
+    }
+    
+    // Return data in requested format
+    if (format === 'json') {
+      return NextResponse.json({ data })
+    } else {
+      // Convert to CSV
+      const csvHeader = Object.keys(data[0] || {}).join(',')
+      const csvRows = data.map((row: any) => 
+        Object.values(row).map(value => 
+          typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value
+        ).join(',')
+      )
+      const csv = [csvHeader, ...csvRows].join('\n')
+      
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename=${type}-export-${dateFormat(new Date(), 'yyyy-MM-dd')}.csv`,
+          'Content-Disposition': `attachment; filename=${type}-export.csv`,
         },
       })
-    } else if (format === 'pdf') {
-      // For simplicity, we'll return a placeholder response
-      // In a real implementation, you would use a PDF library
-      return new NextResponse(
-        JSON.stringify({ message: 'PDF generation not implemented in this demo' }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      )
-    } else {
-      return new NextResponse(`Invalid format: ${format}`, { status: 400 })
     }
   } catch (error) {
-    console.error('Export error:', error)
+    console.error('Error exporting data:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

@@ -15,7 +15,7 @@ interface OrderWithRelations extends Order {
   items: (OrderItem & {
     product: Product
   })[]
-  shippingAddress: Address
+  Address: Address
 }
 
 export default async function OrderConfirmationPage({ params }: PageProps) {
@@ -37,13 +37,16 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
           product: true,
         },
       },
-      shippingAddress: true,
+      Address: true,
     },
   })) as OrderWithRelations | null
 
   if (!order) {
     redirect('/')
   }
+
+  // Convert Decimal to number for calculations
+  const orderTotal = Number(order.total)
 
   return (
     <div className='min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4'>
@@ -69,7 +72,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
                     </p>
                   </div>
                   <p className='font-medium'>
-                    {formatPrice(item.price * item.quantity)}
+                    {formatPrice(Number(item.price) * item.quantity)}
                   </p>
                 </div>
               ))}
@@ -79,7 +82,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
           <div className='space-y-2'>
             <div className='flex justify-between'>
               <span>Subtotal</span>
-              <span>{formatPrice(order.total)}</span>
+              <span>{formatPrice(orderTotal)}</span>
             </div>
             <div className='flex justify-between'>
               <span>Shipping</span>
@@ -87,23 +90,23 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
             </div>
             <div className='flex justify-between'>
               <span>Tax</span>
-              <span>{formatPrice(order.total * 0.1)}</span>
+              <span>{formatPrice(orderTotal * 0.1)}</span>
             </div>
             <div className='flex justify-between font-bold'>
               <span>Total</span>
-              <span>{formatPrice(order.total + 10 + order.total * 0.1)}</span>
+              <span>{formatPrice(orderTotal + 10 + orderTotal * 0.1)}</span>
             </div>
           </div>
 
           <div className='space-y-2'>
             <h2 className='text-lg font-semibold'>Shipping Address</h2>
             <div className='text-gray-500'>
-              {order.shippingAddress.street}
+              {order.Address.street}
               <br />
-              {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
-              {order.shippingAddress.postalCode}
+              {order.Address.city}, {order.Address.state}{' '}
+              {order.Address.postalCode}
               <br />
-              {order.shippingAddress.country}
+              {order.Address.country}
             </div>
           </div>
         </div>

@@ -44,6 +44,12 @@ export default async function InventoryPage() {
     },
   })
 
+  // Format products for the component (convert Decimal to number)
+  const formattedLowStockProducts = lowStockProducts.map(product => ({
+    ...product,
+    price: Number(product.price)
+  }))
+
   // Get count of all products
   const totalProducts = await prisma.product.count()
   
@@ -134,7 +140,7 @@ export default async function InventoryPage() {
               </p>
             </div>
           ) : (
-            <LowStockTable products={lowStockProducts} threshold={LOW_STOCK_THRESHOLD} />
+            <LowStockTable products={formattedLowStockProducts} threshold={LOW_STOCK_THRESHOLD} />
           )}
         </CardContent>
       </Card>

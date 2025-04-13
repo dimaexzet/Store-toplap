@@ -3,46 +3,38 @@ import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
 import { Role } from '@prisma/client'
 
+type tParams = Promise<{ id: string }>
+
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
     
-    // Check authentication and admin role
+    // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== 'ADMIN') {
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    // Don't allow changing own role
-    if (session.user.id === params.id) {
+    const { id } = await params
+    
+    // Admin cannot change their own role
+    if (session.user.id === id) {
       return new NextResponse('Cannot change your own role', { status: 403 })
     }
     
-    const body = await req.json()
-    const { role } = body
+    const { role } = await req.json()
     
-    // Validate role
+    // Validate role value
     if (!role || !Object.values(Role).includes(role)) {
       return new NextResponse('Invalid role value', { status: 400 })
-    }
-    
-    const id = params.id
-    
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id },
-    })
-    
-    if (!existingUser) {
-      return new NextResponse('User not found', { status: 404 })
     }
     
     // Update user role
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { role: role as Role },
+      data: { role },
       select: {
         id: true,
         name: true,

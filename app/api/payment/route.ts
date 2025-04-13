@@ -3,7 +3,9 @@ import { auth } from '@/auth'
 import prisma from '@/lib/prisma'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Check if Stripe API key is available
+const stripeApiKey = process.env.STRIPE_SECRET_KEY || 'dummy_key_for_build';
+const stripe = new Stripe(stripeApiKey);
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +13,11 @@ export async function POST(req: Request) {
 
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 })
+    }
+
+    // Check if Stripe API key is properly configured
+    if (process.env.STRIPE_SECRET_KEY === 'dummy_key_for_build' || !process.env.STRIPE_SECRET_KEY) {
+      return new NextResponse('Payment processing is not configured', { status: 503 })
     }
 
     const body = await req.json()
@@ -32,7 +39,7 @@ export async function POST(req: Request) {
             product: true,
           },
         },
-        shippingAddress: true,
+        Address: true,
       },
     })
 
@@ -41,12 +48,12 @@ export async function POST(req: Request) {
     }
 
     // If order is already paid, return error
-    if (order.stripePaymentId) {
+    if (order.paymentIntentId) {
       return new NextResponse('Order is already paid', { status: 400 })
     }
 
     // Calculate final amount including tax and shipping
-    const subtotal = order.total
+    const subtotal = Number(order.total)
     const shipping = 10 // Fixed shipping cost
     const tax = subtotal * 0.1 // 10% tax
     const total = Math.round((subtotal + shipping + tax) * 100) // Convert to cents
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
         id: order.id,
       },
       data: {
-        stripePaymentId: paymentIntent.id,
+        paymentIntentId: paymentIntent.id,
       },
     })
 

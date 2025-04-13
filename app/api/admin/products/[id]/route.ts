@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
+import crypto from 'crypto'
+
+type tParams = Promise<{ id: string }>
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   const session = await auth()
   
@@ -14,7 +17,7 @@ export async function GET(
   }
   
   try {
-    const id = await params.id
+    const { id } = await params
     
     const product = await prisma.product.findUnique({
       where: { id },
@@ -43,7 +46,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   const session = await auth()
   
@@ -53,7 +56,7 @@ export async function PATCH(
   }
   
   try {
-    const id = await params.id
+    const { id } = await params
     const body = await req.json()
     const { name, description, price, stock, categoryId, featured, images } = body
     
@@ -116,7 +119,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   const session = await auth()
   
@@ -126,7 +129,7 @@ export async function DELETE(
   }
   
   try {
-    const id = await params.id
+    const { id } = await params
     
     // Check if product exists
     const existingProduct = await prisma.product.findUnique({

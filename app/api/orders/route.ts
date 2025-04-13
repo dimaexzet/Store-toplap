@@ -88,30 +88,14 @@ export async function POST(req: Request) {
       )
     }
 
-    // Create shipping address
-    const address = await prisma.address.create({
-      data: {
-        street: shippingInfo.address,
-        city: shippingInfo.city,
-        state: shippingInfo.state,
-        postalCode: shippingInfo.zipCode,
-        country: shippingInfo.country,
-        user: {
-          connect: {
-            id: session.user.id,
-          },
-        },
-      },
-    })
-
     // Start a transaction to ensure all operations succeed or fail together
     const order = await prisma.$transaction(async (tx) => {
       // Create order with items
       const newOrder = await tx.order.create({
         data: {
           userId: session.user.id,
-          addressId: address.id,
           total,
+          paymentMethod: 'STRIPE', // Default payment method
           items: {
             create: items.map((item) => ({
               productId: item.productId,
@@ -119,10 +103,19 @@ export async function POST(req: Request) {
               price: item.price,
             })),
           },
+          Address: {
+            create: {
+              street: shippingInfo.address,
+              city: shippingInfo.city,
+              state: shippingInfo.state,
+              postalCode: shippingInfo.zipCode,
+              country: shippingInfo.country,
+            },
+          },
         },
         include: {
           items: true,
-          user: true,
+          Address: true,
         },
       })
 
@@ -148,15 +141,6 @@ export async function POST(req: Request) {
           console.log(`Low stock alert for ${product.name}: ${product.stock} items remaining`);
         }
       }
-
-      // Clear the user's cart if it exists
-      await tx.cart
-        .delete({
-          where: { userId: session.user.id },
-        })
-        .catch(() => {
-          // Ignore error if cart doesn't exist
-        })
 
       return newOrder
     })

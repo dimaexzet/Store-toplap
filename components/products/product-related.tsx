@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Product } from '@prisma/client'
 import { ProductCard } from '@/components/ui/product-card'
 import {
   Carousel,
@@ -16,11 +15,26 @@ interface ProductRelatedProps {
   currentProductId: string
 }
 
+// Define a type for the product format expected by ProductCard
+interface FormattedProduct {
+  id: string
+  name: string
+  description: string
+  price: number
+  Image?: {
+    id: string
+    url: string
+  }[]
+  stock: number
+  categoryId: string
+  featured: boolean
+}
+
 export function ProductRelated({
   categoryId,
   currentProductId,
 }: ProductRelatedProps) {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<FormattedProduct[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,7 +44,14 @@ export function ProductRelated({
           `/api/products/related?categoryId=${categoryId}&currentProductId=${currentProductId}`
         )
         const data = await response.json()
-        setProducts(data)
+        
+        // Format the product data to ensure price is a number
+        const formattedProducts = data.map((product: any) => ({
+          ...product,
+          price: Number(product.price)
+        }))
+        
+        setProducts(formattedProducts)
       } catch (error) {
         console.error('Error fetching related products:', error)
       } finally {

@@ -2,16 +2,18 @@ import { ProductForm } from '@/components/admin/products/product-form'
 import prisma from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 
+type tParams = Promise<{ id: string }>
+
 interface Props {
-  params: { id: string }
+  params: tParams
 }
 
 export default async function EditProductPage({ params }: Props) {
-  const productId = params.id
+  const { id } = await params
   
   // Get product data
   const product = await prisma.product.findUnique({
-    where: { id: productId },
+    where: { id },
     include: {
       Image: true,
     },
@@ -55,7 +57,7 @@ export default async function EditProductPage({ params }: Props) {
       </div>
 
       <ProductForm 
-        productId={productId}
+        productId={id}
         initialData={productData}
         categories={formattedCategories}
       />

@@ -2,32 +2,82 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
 
+type tParams = Promise<{ id: string }>
+
 // Get user details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
     
-    // Check authentication and admin role
+    // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== 'ADMIN') {
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    const id = params.id
+    const { id } = await params
     
-    // Get user with orders
+    // Get user with their orders
     const user = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        image: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
         orders: {
-          include: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            status: true,
+            total: true,
+            createdAt: true,
+            paymentMethod: true,
+            trackingNumber: true,
             items: {
-              include: {
-                product: true,
+              select: {
+                quantity: true,
+                price: true,
+                product: {
+                  select: {
+                    name: true,
+                    Image: {
+                      take: 1,
+                      select: {
+                        url: true,
+                      },
+                    },
+                  },
+                },
               },
             },
+          },
+        },
+        reviews: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            orders: true,
+            reviews: true,
           },
         },
       },
@@ -37,19 +87,17 @@ export async function GET(
       return new NextResponse('User not found', { status: 404 })
     }
     
-    // Format response (convert Decimal values to numbers)
-    const formattedOrders = user.orders.map(order => ({
-      ...order,
-      total: Number(order.total),
-      items: order.items.map(item => ({
-        ...item,
-        price: Number(item.price),
-      })),
-    }))
-    
+    // Format the user data
     const formattedUser = {
       ...user,
-      orders: formattedOrders,
+      orders: user.orders.map(order => ({
+        ...order,
+        total: Number(order.total),
+        items: order.items.map(item => ({
+          ...item,
+          price: Number(item.price),
+        })),
+      })),
     }
     
     return NextResponse.json(formattedUser)
@@ -62,40 +110,45 @@ export async function GET(
 // Update user
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
     
-    // Check authentication and admin role
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    // Check if user is authenticated
+    if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    const id = params.id
-    const body = await req.json()
+    const { id } = await params
     
-    // Validate input
-    const { name, email, image } = body
-    
-    if (email) {
-      // Check if email already exists for another user
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-      })
-      
-      if (existingUser && existingUser.id !== id) {
-        return new NextResponse('Email already in use', { status: 400 })
-      }
+    // Users can only update their own profiles unless they're admins
+    if (session.user.id !== id && session.user.role !== 'ADMIN') {
+      return new NextResponse('Forbidden', { status: 403 })
     }
+    
+    const { name, email } = await req.json()
+    
+    // Basic validation
+    if ((!name || typeof name !== 'string' || name.trim() === '') && 
+        (!email || typeof email !== 'string' || email.trim() === '')) {
+      return new NextResponse('Invalid request data', { status: 400 })
+    }
+    
+    // Build update data
+    const updateData: any = {}
+    if (name) updateData.name = name
+    if (email) updateData.email = email
     
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: {
-        ...(name !== undefined && { name }),
-        ...(email !== undefined && { email }),
-        ...(image !== undefined && { image }),
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
       },
     })
     
@@ -109,33 +162,24 @@ export async function PATCH(
 // Delete user
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: tParams }
 ) {
   try {
     const session = await auth()
     
-    // Check authentication and admin role
+    // Check if user is authenticated and is an admin
     if (!session?.user || session.user.role !== 'ADMIN') {
       return new NextResponse('Unauthorized', { status: 401 })
     }
     
-    // Don't allow deleting self
-    if (session.user.id === params.id) {
+    const { id } = await params
+    
+    // Prevent admin from deleting their own account via this API
+    if (session.user.id === id) {
       return new NextResponse('Cannot delete your own account', { status: 403 })
     }
     
-    const id = params.id
-    
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id },
-    })
-    
-    if (!existingUser) {
-      return new NextResponse('User not found', { status: 404 })
-    }
-    
-    // Delete the user - Prisma will cascade delete related records
+    // Delete user
     await prisma.user.delete({
       where: { id },
     })

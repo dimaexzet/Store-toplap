@@ -21,7 +21,7 @@ export default async function PaymentPage({ params }: PageProps) {
 
   const order = await prisma.order.findUnique({
     where: {
-      id: id,
+      id,
       userId: session.user.id,
     },
     include: {
@@ -30,7 +30,7 @@ export default async function PaymentPage({ params }: PageProps) {
           product: true,
         },
       },
-      shippingAddress: true,
+      Address: true,
     },
   })
 
@@ -39,7 +39,7 @@ export default async function PaymentPage({ params }: PageProps) {
   }
 
   // If order is already paid, redirect to confirmation
-  if (order.stripePaymentId) {
+  if (order.paymentIntentId) {
     redirect(`/order-confirmation/${order.id}`)
   }
 

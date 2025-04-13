@@ -2,67 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import prisma from '@/lib/prisma'
 
+type tParams = Promise<{ id: string }>
+
+// DELETE address
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: tParams }
 ) {
   try {
+    // Auth check
     const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'You must be logged in to delete an address' },
-        { status: 401 }
-      )
+    if (!session || !session.user) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
-
-    const addressId = params.id
-
-    // First, find the address to confirm it exists and to get the orderId
+    
+    const { id } = await params
+    
+    // Check if address exists and belongs to user
     const address = await prisma.address.findUnique({
-      where: {
-        id: addressId,
-      },
-      include: {
-        Order: {
-          select: {
-            userId: true,
-          },
-        },
-      },
+      where: { id },
+      select: { orderId: true, Order: { select: { userId: true } } },
     })
-
+    
     if (!address) {
-      return NextResponse.json(
-        { error: 'Address not found' },
-        { status: 404 }
-      )
+      return new NextResponse('Address not found', { status: 404 })
     }
-
-    // Ensure the user owns this address by checking the associated order
-    if (address.Order?.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'You do not have permission to delete this address' },
-        { status: 403 }
-      )
+    
+    // Only allow user to delete their own address
+    if (address.Order.userId !== session.user.id) {
+      return new NextResponse('Forbidden', { status: 403 })
     }
-
-    // In our schema, the address is linked to an order
-    // Since Prisma cascades the delete, we need to delete the order
-    // which will automatically delete the address
-    await prisma.order.delete({
-      where: {
-        id: address.orderId,
-      },
+    
+    // Delete address
+    await prisma.address.delete({
+      where: { id },
     })
-
-    return NextResponse.json({
-      message: 'Address deleted successfully',
-    })
+    
+    return new NextResponse(null, { status: 204 })
   } catch (error) {
     console.error('Error deleting address:', error)
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    )
+    return new NextResponse('Internal server error', { status: 500 })
   }
 } 
