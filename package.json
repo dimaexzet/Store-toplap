@@ -11,7 +11,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "security-audit": "node scripts/security-audit.js",
-    "vercel-build": "npm install --legacy-peer-deps --include=dev && prisma generate && next build --no-lint"  "dependencies": {
+    "vercel-build": "npm install --legacy-peer-deps --include=dev && prisma generate && next build --no-lint"
+  },
+  "dependencies": {    
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.3.1",
     "@radix-ui/react-alert-dialog": "^1.1.7",
