@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
     
     // Send password reset email
-    await sendPasswordResetEmail(email, resetLink);
+    await sendPasswordResetEmail(email, user.name || 'User', token);
     
     return NextResponse.json(
       { message: 'If an account with that email exists, a password reset link has been sent.' },
