@@ -9,7 +9,13 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
 import { handleApiError } from '@/lib/security'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Initialize Stripe only if the API key is available
+const stripeApiKey = process.env.STRIPE_SECRET_KEY;
+let stripe: Stripe | null = null;
+
+if (stripeApiKey) {
+  stripe = new Stripe(stripeApiKey);
+}
 
 // Define validation schema for checkout items
 const itemSchema = z.object({
@@ -139,6 +145,10 @@ async function handler(req: Request) {
     )
 
     // Create Stripe payment intent with idempotency key
+    if (!stripe) {
+      throw new Error('Stripe API key is not configured');
+    }
+    
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(
         (Number(order.total) + Number(order.total) * 0.1 + 10) * 100 // Total + 10% tax + $10 shipping
