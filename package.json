@@ -13,7 +13,7 @@
     "security-audit": "node scripts/security-audit.js",
     "vercel-build": "npm install --legacy-peer-deps --include=dev && prisma generate && next build --no-lint"
   },
-  "dependencies": {    
+  "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.3.1",
     "@radix-ui/react-alert-dialog": "^1.1.7",
@@ -43,6 +43,7 @@
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "crypto": "^1.0.1",
     "csrf": "^3.1.0",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.5.2",

@@ -5,14 +5,31 @@ const f = createUploadthing();
 
 // Define file upload permissions
 const handleAuth = async () => {
-  const session = await auth();
-  
-  // Ensure the user is authenticated and is an admin
-  if (!session || !session.user || session.user.role !== "ADMIN") {
-    throw new Error("Unauthorized");
+  try {
+    console.log("Authentication check for uploadthing started");
+    const session = await auth();
+    
+    if (!session) {
+      console.error("Authentication failed: No session found");
+      throw new Error("Unauthorized: No session");
+    }
+    
+    if (!session.user) {
+      console.error("Authentication failed: No user in session");
+      throw new Error("Unauthorized: No user");
+    }
+    
+    if (session.user.role !== "ADMIN") {
+      console.error("Authorization failed: User is not an admin", session.user);
+      throw new Error("Unauthorized: Not an admin");
+    }
+    
+    console.log("Authentication successful for user:", session.user.id);
+    return { userId: session.user.id };
+  } catch (error) {
+    console.error("Authentication error in uploadthing middleware:", error);
+    throw error; // Re-throw to be handled by UploadThing
   }
-  
-  return { userId: session.user.id };
 };
 
 // FileRouter for your app, can contain multiple FileRoutes

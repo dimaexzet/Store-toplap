@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
+import crypto from 'crypto'
 
 export async function GET(req: NextRequest) {
   const session = await auth()

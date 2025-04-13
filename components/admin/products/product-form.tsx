@@ -102,30 +102,57 @@ export function ProductForm({ productId, initialData, categories }: ProductFormP
     
     setIsUploading(true)
     try {
-      const uploadedImages = await startUpload(files)
+      // Проверка размера и типа файлов
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`File "${file.name}" is not an image`);
+        }
+        
+        // Максимальный размер файла (8MB)
+        const maxSize = 8 * 1024 * 1024;
+        if (file.size > maxSize) {
+          throw new Error(`File "${file.name}" exceeds the 8MB size limit`);
+        }
+      }
+
+      console.log('Attempting to upload files:', files.map(f => ({ name: f.name, type: f.type, size: f.size })));
       
-      if (!uploadedImages) {
-        throw new Error('Upload failed')
+      // Загружаем файлы напрямую без обертки
+      const uploadedImages = await startUpload(files);
+      
+      if (!uploadedImages || uploadedImages.length === 0) {
+        console.error('Upload failed: No files were uploaded');
+        throw new Error('No files were uploaded');
       }
       
-      const imageUrls = uploadedImages.map(img => img.url)
+      console.log('Upload successful:', uploadedImages);
+      const imageUrls = uploadedImages.map(img => img.url);
       
-      setImages(prevImages => [...prevImages, ...imageUrls])
-      setFiles([])
+      setImages(prevImages => [...prevImages, ...imageUrls]);
+      setFiles([]);
       
-      return imageUrls
+      return imageUrls;
     } catch (error) {
-      console.error('Error uploading images:', error)
+      console.error('Error uploading images:', error);
+      
+      // Provide more detailed error message based on the error
+      let errorMessage = 'There was an error uploading your images. Please try again.';
+      
+      if (error instanceof Error) {
+        console.error('Error details:', error.message, error.stack);
+        errorMessage = error.message || errorMessage;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Upload failed',
-        description: 'There was an error uploading your images. Please try again.',
-      })
-      return []
+        description: errorMessage,
+      });
+      return [];
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
   
   // Form validation
   const validateForm = () => {
