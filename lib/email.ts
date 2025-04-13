@@ -1,13 +1,17 @@
 import { Resend } from 'resend';
+import { formatCurrency } from '@/lib/utils';
 
-// Initialize Resend with API key from environment variable
-const resend = new Resend(process.env.RESEND_API_KEY);
+const SENDER_EMAIL = 'order@amazona.shop';
 
-// Set the sender email address
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'orders@amazona.com';
+let resend: Resend | null = null;
+
+// Only initialize Resend if the API key is available
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+}
 
 /**
- * Send an order confirmation email
+ * Sends an order confirmation email to the customer
  */
 export async function sendOrderConfirmationEmail(
   email: string,
@@ -18,22 +22,40 @@ export async function sendOrderConfirmationEmail(
   total: number
 ) {
   try {
-    // Format order items for email
-    const itemsList = orderItems.map(item => 
-      `<tr>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.product.name}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd;">$${Number(item.price).toFixed(2)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.quantity}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd;">$${(Number(item.price) * item.quantity).toFixed(2)}</td>
-      </tr>`
-    ).join('');
-
-    // Format shipping address
-    const address = `
-      ${shippingAddress.street}<br>
-      ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}<br>
-      ${shippingAddress.country}
-    `;
+    // Skip sending if Resend client wasn't initialized
+    if (!resend) {
+      console.warn('Email sending skipped - Resend API key is missing');
+      return { success: false, error: 'API key not configured' };
+    }
+    
+    // Format the order items as HTML
+    const orderItemsHtml = orderItems
+      .map(
+        (item) => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">
+            <img src="${item.product.Image?.[0]?.url || '/placeholder.png'}" alt="${
+          item.product.name
+        }" width="50" height="50" style="border-radius: 5px;">
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${
+            item.product.name
+          }</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">x${
+            item.quantity
+          }</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatCurrency(
+            Number(item.price)
+          )}</td>
+        </tr>
+      `
+      )
+      .join('');
+      
+    // Calculate subtotals
+    const itemsTotal = orderItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    const shippingFee = total * 0.05; // Assuming 5% of total for shipping
+    const tax = total * 0.1; // Assuming 10% tax
 
     const { data, error } = await resend.emails.send({
       from: SENDER_EMAIL,
@@ -43,38 +65,62 @@ export async function sendOrderConfirmationEmail(
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333; text-align: center;">Order Confirmation</h1>
           <p>Hello ${name},</p>
-          <p>Thank you for your order! We're processing it right away.</p>
+          <p>Thank you for your order! We're processing it now and will let you know when it ships.</p>
           
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <h2 style="margin-top: 0;">Order #${orderId.substring(0, 8)}</h2>
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-            
-            <h3>Items</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <thead>
-                <tr style="background-color: #f2f2f2;">
-                  <th style="padding: 10px; text-align: left;">Product</th>
-                  <th style="padding: 10px; text-align: left;">Price</th>
-                  <th style="padding: 10px; text-align: left;">Quantity</th>
-                  <th style="padding: 10px; text-align: left;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsList}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="3" style="padding: 10px; text-align: right;"><strong>Order Total:</strong></td>
-                  <td style="padding: 10px;"><strong>$${Number(total).toFixed(2)}</strong></td>
-                </tr>
-              </tfoot>
-            </table>
-            
-            <h3>Shipping Address</h3>
-            <p>${address}</p>
+            <p><strong>Payment Method:</strong> STRIPE</p>
+            <p><strong>Shipping Address:</strong><br>
+              ${name}<br>
+              ${shippingAddress.street}<br>
+              ${shippingAddress.city}, ${shippingAddress.state} ${
+        shippingAddress.postalCode
+      }<br>
+              ${shippingAddress.country}
+            </p>
           </div>
           
-          <p>You'll receive another email when your order ships.</p>
+          <h3>Order Items</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f2f2f2;">
+                <th style="padding: 10px; text-align: left;">Image</th>
+                <th style="padding: 10px; text-align: left;">Product</th>
+                <th style="padding: 10px; text-align: left;">Quantity</th>
+                <th style="padding: 10px; text-align: left;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderItemsHtml}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" style="padding: 10px; text-align: right;"><strong>Subtotal:</strong></td>
+                <td style="padding: 10px;">${formatCurrency(
+                  itemsTotal
+                )}</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="padding: 10px; text-align: right;"><strong>Shipping:</strong></td>
+                <td style="padding: 10px;">${formatCurrency(
+                  shippingFee
+                )}</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="padding: 10px; text-align: right;"><strong>Tax:</strong></td>
+                <td style="padding: 10px;">${formatCurrency(tax)}</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="padding: 10px; text-align: right;"><strong>Total:</strong></td>
+                <td style="padding: 10px; font-weight: bold;">${formatCurrency(
+                  total
+                )}</td>
+              </tr>
+            </tfoot>
+          </table>
+          
+          <p>If you have any questions, please contact our customer service.</p>
           <p>Thank you for shopping with us!</p>
           <p>The Amazona Team</p>
         </div>
@@ -82,19 +128,19 @@ export async function sendOrderConfirmationEmail(
     });
 
     if (error) {
-      console.error('Error sending order confirmation email:', error);
-      throw new Error(`Failed to send order confirmation email: ${error.message}`);
+      console.error('Failed to send order confirmation email:', error);
+      return { success: false, error };
     }
 
-    return { success: true, messageId: data?.id };
+    return { success: true, data };
   } catch (error) {
-    console.error('Error in sendOrderConfirmationEmail:', error);
+    console.error('Failed to send order confirmation email:', error);
     return { success: false, error };
   }
 }
 
 /**
- * Send an order status update email
+ * Sends a shipping update email to the customer
  */
 export async function sendShippingUpdateEmail(
   email: string,
@@ -104,6 +150,12 @@ export async function sendShippingUpdateEmail(
   trackingNumber?: string
 ) {
   try {
+    // Skip sending if Resend client wasn't initialized
+    if (!resend) {
+      console.warn('Email sending skipped - Resend API key is missing');
+      return { success: false, error: 'API key not configured' };
+    }
+
     // Customize message based on status
     let statusMessage = '';
     let subject = '';
@@ -135,7 +187,7 @@ export async function sendShippingUpdateEmail(
     const { data, error } = await resend.emails.send({
       from: SENDER_EMAIL,
       to: email,
-      subject,
+      subject: `Order ${orderId} Update - ${status}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333; text-align: center;">Order Update</h1>
@@ -155,41 +207,53 @@ export async function sendShippingUpdateEmail(
     });
 
     if (error) {
-      console.error('Error sending shipping update email:', error);
-      throw new Error(`Failed to send shipping update email: ${error.message}`);
+      console.error('Failed to send shipping update email:', error);
+      return { success: false, error };
     }
 
-    return { success: true, messageId: data?.id };
+    return { success: true, data };
   } catch (error) {
-    console.error('Error in sendShippingUpdateEmail:', error);
+    console.error('Failed to send shipping update email:', error);
     return { success: false, error };
   }
 }
 
 /**
- * Send a password reset email
+ * Sends a password reset email to the user
  */
 export async function sendPasswordResetEmail(
   email: string,
-  resetLink: string
+  name: string,
+  resetToken: string
 ) {
   try {
+    // Skip sending if Resend client wasn't initialized
+    if (!resend) {
+      console.warn('Email sending skipped - Resend API key is missing');
+      return { success: false, error: 'API key not configured' };
+    }
+    
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+
     const { data, error } = await resend.emails.send({
       from: SENDER_EMAIL,
       to: email,
-      subject: 'Reset Your Password - Amazona',
+      subject: 'Reset Your Password',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333; text-align: center;">Password Reset Request</h1>
-          <p>Hello,</p>
-          <p>We received a request to reset your password for your Amazona account. Click the button below to set a new password:</p>
+          <h1 style="color: #333; text-align: center;">Password Reset</h1>
+          <p>Hello ${name},</p>
+          <p>We received a request to reset your password. Click the button below to reset it:</p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Reset Password</a>
+            <a href="${resetUrl}" style="background-color: #f0c14b; color: #111; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
           </div>
           
-          <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+          <p>Or copy and paste this URL into your browser:</p>
+          <p style="word-break: break-all;">${resetUrl}</p>
+          
           <p>This link will expire in 1 hour.</p>
+          <p>If you didn't request a password reset, you can safely ignore this email.</p>
           
           <p>Thank you,</p>
           <p>The Amazona Team</p>
@@ -198,13 +262,13 @@ export async function sendPasswordResetEmail(
     });
 
     if (error) {
-      console.error('Error sending password reset email:', error);
-      throw new Error(`Failed to send password reset email: ${error.message}`);
+      console.error('Failed to send password reset email:', error);
+      return { success: false, error };
     }
 
-    return { success: true, messageId: data?.id };
+    return { success: true, data };
   } catch (error) {
-    console.error('Error in sendPasswordResetEmail:', error);
+    console.error('Failed to send password reset email:', error);
     return { success: false, error };
   }
 } 
