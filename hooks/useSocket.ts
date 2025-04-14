@@ -154,6 +154,77 @@ export const useSocket = () => {
     }
   }, []);
 
+  // Функция для загрузки недавних заказов
+  const loadRecentOrders = useCallback(async () => {
+    try {
+      // Запрашиваем недавние заказы из API
+      const response = await fetch('/api/orders/recent?limit=5', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch recent orders');
+      }
+      
+      const orders = await response.json();
+      console.log('Loaded recent orders:', orders);
+      
+      if (orders && orders.length > 0) {
+        // Создаем уведомления для недавних заказов
+        const notifications: OrderNotification[] = orders.map((order: any) => ({
+          type: 'new',
+          order: order,
+          message: `New order received: ${order.id}`,
+          timestamp: new Date(order.createdAt)
+        }));
+        
+        // Обновляем состояние уведомлений
+        setOrderNotifications(notifications);
+      }
+    } catch (error) {
+      console.error('Error loading recent orders:', error);
+    }
+  }, []);
+
+  // Функция для загрузки обновлений запасов
+  const loadStockUpdates = useCallback(async () => {
+    try {
+      // Запрашиваем обновления запасов из API
+      const response = await fetch('/api/products/stock-updates?limit=5', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch stock updates');
+      }
+      
+      const updates = await response.json();
+      console.log('Loaded stock updates:', updates);
+      
+      if (updates && updates.length > 0) {
+        // Обновляем состояние уведомлений
+        setStockNotifications(updates);
+      }
+    } catch (error) {
+      console.error('Error loading stock updates:', error);
+    }
+  }, []);
+
+  // Загрузка всех данных при инициализации
+  const loadAllData = useCallback(async () => {
+    await Promise.all([
+      loadLowStockProducts(),
+      loadRecentOrders(),
+      loadStockUpdates()
+    ]);
+  }, [loadLowStockProducts, loadRecentOrders, loadStockUpdates]);
+
   useEffect(() => {
     if (ENABLE_REALTIME) {
       // Set up polling for notifications instead of WebSocket
@@ -165,8 +236,8 @@ export const useSocket = () => {
             setError(null);
             console.log('Connected to simulated WebSocket service');
             
-            // При первом подключении загружаем товары с низким запасом
-            await loadLowStockProducts();
+            // При первом подключении загружаем все данные
+            await loadAllData();
           }
           
           // In a real app, you would fetch new notifications here
@@ -178,8 +249,8 @@ export const useSocket = () => {
         }
       }, POLLING_INTERVAL);
       
-      // При монтировании компонента загружаем товары с низким запасом
-      loadLowStockProducts();
+      // При монтировании компонента загружаем все данные
+      loadAllData();
       
       // Clean up on unmount
       return () => {
@@ -189,7 +260,7 @@ export const useSocket = () => {
     } else {
       console.log('Real-time features are disabled, using mock data');
     }
-  }, [loadLowStockProducts]);
+  }, [loadAllData]);
 
   // Function to emit new order event using the REST API
   const emitNewOrder = useCallback(async (orderData: Order) => {
@@ -363,12 +434,12 @@ export const useSocket = () => {
       setIsConnected(true);
       setError(null);
       
-      // При переподключении обновляем уведомления о низком запасе
-      loadLowStockProducts();
+      // При переподключении обновляем все данные
+      loadAllData();
     }, 1000);
     
     return true;
-  }, [loadLowStockProducts]);
+  }, [loadAllData]);
 
   return {
     socket: null, // We don't have a real socket instance now
