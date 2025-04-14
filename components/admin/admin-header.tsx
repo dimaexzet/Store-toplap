@@ -20,7 +20,6 @@ const navigation = [
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Top Products', href: '/admin/top-products', icon: TrendingUp },
-  { name: 'Inventory', href: '/admin/inventory', icon: Warehouse },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Customers', href: '/admin/customers', icon: Users },
