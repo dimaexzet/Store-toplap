@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import prisma from '@/lib/prisma';
+import { getLowStockProducts } from '@/lib/analytics';
 
 // Enable/disable real-time features
 const ENABLE_REALTIME = true; // Real-time notifications enabled
@@ -118,6 +120,40 @@ export const useSocket = () => {
   );
   const [error, setError] = useState<string | null>(null);
 
+  // Функция для загрузки товаров с низким запасом
+  const loadLowStockProducts = useCallback(async () => {
+    try {
+      // Запрашиваем товары с низким запасом из API
+      const response = await fetch('/api/products/low-stock?threshold=5', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch low stock products');
+      }
+      
+      const products = await response.json();
+      console.log('Loaded low stock products:', products);
+      
+      if (products && products.length > 0) {
+        // Создаем уведомления для товаров с низким запасом
+        const notifications: LowStockNotification[] = products.map((product: Product) => ({
+          product,
+          message: `Low stock alert: ${product.name} has only ${product.stock} items left`,
+          timestamp: new Date()
+        }));
+        
+        // Обновляем состояние уведомлений
+        setLowStockNotifications(notifications);
+      }
+    } catch (error) {
+      console.error('Error loading low stock products:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (ENABLE_REALTIME) {
       // Set up polling for notifications instead of WebSocket
@@ -128,6 +164,9 @@ export const useSocket = () => {
             setIsConnected(true);
             setError(null);
             console.log('Connected to simulated WebSocket service');
+            
+            // При первом подключении загружаем товары с низким запасом
+            await loadLowStockProducts();
           }
           
           // In a real app, you would fetch new notifications here
@@ -139,6 +178,9 @@ export const useSocket = () => {
         }
       }, POLLING_INTERVAL);
       
+      // При монтировании компонента загружаем товары с низким запасом
+      loadLowStockProducts();
+      
       // Clean up on unmount
       return () => {
         clearInterval(pollInterval);
@@ -147,7 +189,7 @@ export const useSocket = () => {
     } else {
       console.log('Real-time features are disabled, using mock data');
     }
-  }, []);
+  }, [loadLowStockProducts]);
 
   // Function to emit new order event using the REST API
   const emitNewOrder = useCallback(async (orderData: Order) => {
@@ -243,6 +285,11 @@ export const useSocket = () => {
         newStock: stockData.newStock,
         timestamp: new Date()
       }, ...prev].slice(0, 10));
+      
+      // Обновляем уведомления о низком запасе, если запас стал низким
+      if (stockData.newStock <= 5) {
+        emitLowStockAlert(stockData.product);
+      }
     } catch (error) {
       console.error('Error emitting stock update:', error);
       setError(`Error updating stock: ${error instanceof Error ? error.message : String(error)}`);
@@ -315,10 +362,13 @@ export const useSocket = () => {
     setTimeout(() => {
       setIsConnected(true);
       setError(null);
+      
+      // При переподключении обновляем уведомления о низком запасе
+      loadLowStockProducts();
     }, 1000);
     
     return true;
-  }, []);
+  }, [loadLowStockProducts]);
 
   return {
     socket: null, // We don't have a real socket instance now
