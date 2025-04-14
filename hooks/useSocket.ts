@@ -7,6 +7,35 @@ import { io, Socket } from 'socket.io-client';
 const ENABLE_REALTIME = true; // Real-time notifications enabled
 const POLLING_INTERVAL = 5000; // Poll for updates every 5 seconds
 
+// Define a Product interface matching the expected structure
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number; // Using number instead of Decimal for client
+  stock: number;
+  categoryId: string;
+  featured: boolean;
+  imageUrl?: string;
+  Image?: { id: string; url: string }[];
+}
+
+// Define an Order interface that matches the expected structure
+export interface Order {
+  id: string;
+  status?: string;
+  total?: number;
+  paymentMethod?: string;
+  trackingNumber?: string;
+  items?: {
+    id: string;
+    productId: string;
+    quantity: number;
+    price: number;
+  }[];
+  [key: string]: any; // Allow for additional properties that might be needed
+}
+
 export type OrderNotification = {
   type: 'new' | 'update' | 'cancel';
   order: {
@@ -20,14 +49,14 @@ export type OrderNotification = {
 };
 
 export type StockNotification = {
-  product: any;
+  product: Product;
   previousStock: number;
   newStock: number;
   timestamp: Date;
 };
 
 export type LowStockNotification = {
-  product: any;
+  product: Product;
   message: string;
   timestamp: Date;
 };
@@ -44,7 +73,15 @@ const MOCK_ORDER_NOTIFICATIONS: OrderNotification[] = [
 
 const MOCK_STOCK_NOTIFICATIONS: StockNotification[] = [
   {
-    product: { name: 'Sample Product' },
+    product: { 
+      id: 'mock-product-1',
+      name: 'Sample Product',
+      description: 'Sample description',
+      price: 29.99,
+      stock: 5,
+      categoryId: 'mock-category-1',
+      featured: false
+    },
     previousStock: 10,
     newStock: 5,
     timestamp: new Date()
@@ -53,7 +90,15 @@ const MOCK_STOCK_NOTIFICATIONS: StockNotification[] = [
 
 const MOCK_LOW_STOCK_NOTIFICATIONS: LowStockNotification[] = [
   {
-    product: { name: 'Sample Product', stock: 3 },
+    product: { 
+      id: 'mock-product-2',
+      name: 'Sample Product',
+      description: 'Sample description',
+      price: 49.99,
+      stock: 3,
+      categoryId: 'mock-category-1',
+      featured: true
+    },
     message: 'Low stock alert: Sample Product has only 3 items left (mock)',
     timestamp: new Date()
   }
@@ -105,7 +150,7 @@ export const useSocket = () => {
   }, []);
 
   // Function to emit new order event using the REST API
-  const emitNewOrder = useCallback(async (orderData: any) => {
+  const emitNewOrder = useCallback(async (orderData: Order) => {
     if (!ENABLE_REALTIME) {
       console.log('Mocking new order emission:', orderData.id);
       // Ensure any Decimal values are converted to numbers
@@ -160,7 +205,7 @@ export const useSocket = () => {
   }, []);
 
   // Function to emit stock update event
-  const emitStockUpdate = useCallback(async (stockData: { product: any; previousStock: number; newStock: number }) => {
+  const emitStockUpdate = useCallback(async (stockData: { product: Product; previousStock: number; newStock: number }) => {
     if (!ENABLE_REALTIME) {
       console.log('Mocking stock update emission:', stockData.product?.name);
       setStockNotifications(prev => [{
@@ -205,7 +250,7 @@ export const useSocket = () => {
   }, []);
 
   // Function to emit low stock alert
-  const emitLowStockAlert = useCallback(async (productData: any) => {
+  const emitLowStockAlert = useCallback(async (productData: Product) => {
     if (!ENABLE_REALTIME) {
       console.log('Mocking low stock alert:', productData.name);
       setLowStockNotifications(prev => [{

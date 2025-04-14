@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Bell, Package, ShoppingCart, AlertTriangle, RefreshCw, AlertCircle, PlusCircle } from 'lucide-react';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket, Order } from '@/hooks/useSocket';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -66,7 +66,7 @@ export default function RealTimeNotifications() {
 
   // Test function to generate a notification
   const triggerTestNotification = () => {
-    const testOrder = {
+    const testOrder: Order = {
       id: `test-${Math.random().toString(36).substring(2, 10)}`,
       status: 'PENDING',
       total: 199.99

@@ -1,4 +1,5 @@
 import { formatPrice, formatCurrency, checkLowStock, emitOrderCreatedEvent, emitStockUpdatedEvent } from '@/lib/utils'
+import { Order, Product } from '@/hooks/useSocket'
 
 // Mock console methods
 const originalConsoleLog = console.log
@@ -52,7 +53,11 @@ describe('Inventory Functions', () => {
 
 describe('Socket Event Functions', () => {
   test('emitOrderCreatedEvent logs order creation', async () => {
-    const order = { id: '123', total: 100 }
+    const order: Order = { 
+      id: '123', 
+      total: 100,
+      status: 'PENDING'
+    }
     const result = await emitOrderCreatedEvent(order)
     
     expect(result).toBe(true)
@@ -60,7 +65,15 @@ describe('Socket Event Functions', () => {
   })
 
   test('emitStockUpdatedEvent logs stock update', async () => {
-    const product = { id: '123', name: 'Test Product' }
+    const product: Product = { 
+      id: '123', 
+      name: 'Test Product',
+      description: 'Test description',
+      price: 19.99,
+      stock: 8,
+      categoryId: 'cat123',
+      featured: false
+    }
     const result = await emitStockUpdatedEvent(product, 10, 8)
     
     expect(result).toBe(true)
@@ -71,7 +84,11 @@ describe('Socket Event Functions', () => {
     // Simulate an error
     console.log = jest.fn(() => { throw new Error('Test error') })
     
-    const order = { id: '123', total: 100 }
+    const order: Order = { 
+      id: '123', 
+      total: 100,
+      status: 'PENDING'
+    }
     const result = await emitOrderCreatedEvent(order)
     
     expect(result).toBe(false)
@@ -82,7 +99,15 @@ describe('Socket Event Functions', () => {
     // Simulate an error
     console.log = jest.fn(() => { throw new Error('Test error') })
     
-    const product = { id: '123', name: 'Test Product' }
+    const product: Product = { 
+      id: '123', 
+      name: 'Test Product',
+      description: 'Test description',
+      price: 19.99,
+      stock: 8,
+      categoryId: 'cat123',
+      featured: false
+    }
     const result = await emitStockUpdatedEvent(product, 10, 8)
     
     expect(result).toBe(false)

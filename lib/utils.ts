@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { Order, Product } from '@/hooks/useSocket'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -20,7 +21,7 @@ export function formatCurrency(amount: number): string {
 }
 
 // Socket Event Utilities for Orders and Stock
-export async function emitOrderCreatedEvent(order: any) {
+export async function emitOrderCreatedEvent(order: Order) {
   try {
     // The actual emission happens on the client side through the useSocket hook
     // This is just a server-side utility to trigger the initialization
@@ -32,7 +33,7 @@ export async function emitOrderCreatedEvent(order: any) {
   }
 }
 
-export async function emitStockUpdatedEvent(product: any, previousStock: number, newStock: number) {
+export async function emitStockUpdatedEvent(product: Product, previousStock: number, newStock: number) {
   try {
     // The actual emission happens on the client side through the useSocket hook
     // This is just a server-side utility to trigger the initialization
