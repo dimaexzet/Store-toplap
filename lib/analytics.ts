@@ -1,40 +1,110 @@
 import prisma from '@/lib/prisma'
 import { OrderStatus } from '@prisma/client'
-import { startOfDay, subDays, format } from 'date-fns'
+import { startOfDay, subDays, format, eachDayOfInterval, endOfDay, startOfMonth, endOfMonth } from 'date-fns'
+
+export async function getTotalRevenue(days: number = 30) {
+  const endDate = new Date()
+  const startDate = subDays(endDate, days)
+
+  const result = await prisma.order.aggregate({
+    _sum: {
+      total: true
+    },
+    where: {
+      status: OrderStatus.DELIVERED,
+      createdAt: {
+        gte: startDate,
+        lte: endDate
+      }
+    }
+  })
+
+  return result._sum.total ? Number(result._sum.total) : 0
+}
+
+export async function getAverageOrderValue(days: number = 30) {
+  const endDate = new Date()
+  const startDate = subDays(endDate, days)
+
+  const result = await prisma.order.aggregate({
+    _avg: {
+      total: true
+    },
+    where: {
+      status: {
+        not: OrderStatus.CANCELLED
+      },
+      createdAt: {
+        gte: startDate,
+        lte: endDate
+      }
+    }
+  })
+
+  return result._avg.total ? Number(result._avg.total) : 0
+}
 
 export async function getRevenueData(days: number = 30) {
-  const endDate = startOfDay(new Date())
+  const endDate = new Date()
   const startDate = subDays(endDate, days)
 
   const orders = await prisma.order.findMany({
     where: {
-      status: OrderStatus.DELIVERED,
+      status: {
+        in: [OrderStatus.DELIVERED, OrderStatus.SHIPPED, OrderStatus.PROCESSING]
+      },
       createdAt: {
         gte: startDate,
         lte: endDate,
       },
     },
     select: {
+      id: true,
       total: true,
       createdAt: true,
+      status: true,
     },
     orderBy: {
       createdAt: 'asc',
     },
   })
 
-  // Group orders by date and calculate daily revenue
+  console.log(`Found ${orders.length} orders for revenue data in the period`)
+
+  if (orders.length === 0) {
+    console.log('No orders found, generating default data points')
+    const interval = eachDayOfInterval({ start: startDate, end: endDate })
+    return interval.slice(-7).map(date => ({
+      date: format(date, 'MMM d'),
+      revenue: 0
+    }))
+  }
+
   const dailyRevenue = orders.reduce((acc, order) => {
     const date = format(order.createdAt, 'MMM d')
-    acc[date] = (acc[date] || 0) + Number(order.total)
+    const orderTotal = Number(order.total)
+    
+    if (isNaN(orderTotal)) {
+      console.warn(`Invalid order total for order ${order.id}: ${order.total}`)
+      return acc
+    }
+    
+    acc[date] = (acc[date] || 0) + orderTotal
     return acc
   }, {} as Record<string, number>)
 
-  // Convert to array format for Recharts
   const data = Object.entries(dailyRevenue).map(([date, revenue]) => ({
     date,
     revenue,
   }))
+
+  console.log(`Generated ${data.length} data points for revenue chart`)
+  
+  data.sort((a, b) => {
+    const dateA = new Date(a.date)
+    const dateB = new Date(b.date)
+    return dateA.getTime() - dateB.getTime()
+  })
 
   return data
 }
@@ -43,6 +113,7 @@ export async function getOrderStats() {
   const endDate = new Date()
   const startDate = subDays(endDate, 30)
 
+  // Получаем статистику по статусам заказов
   const orderStats = await prisma.order.groupBy({
     by: ['status'],
     where: {
@@ -54,10 +125,41 @@ export async function getOrderStats() {
     _count: true,
   })
 
-  return orderStats.map((stat) => ({
-    name: stat.status,
-    value: stat._count,
-  }))
+  console.log('Order stats:', orderStats)
+
+  // Если нет данных, возвращаем дефолтные значения
+  if (!orderStats || orderStats.length === 0) {
+    console.log('No order stats found, returning default values')
+    return [
+      { name: OrderStatus.PENDING, value: 0 },
+      { name: OrderStatus.PROCESSING, value: 0 },
+      { name: OrderStatus.SHIPPED, value: 0 },
+      { name: OrderStatus.DELIVERED, value: 0 },
+    ]
+  }
+
+  // Проверяем, что все статусы заказов представлены
+  const result = []
+  const statuses = [
+    OrderStatus.PENDING, 
+    OrderStatus.PROCESSING, 
+    OrderStatus.SHIPPED, 
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+    OrderStatus.REFUNDED
+  ]
+  
+  // Для каждого статуса находим его количество
+  for (const status of statuses) {
+    const stat = orderStats.find(s => s.status === status)
+    result.push({
+      name: status,
+      value: stat ? stat._count : 0
+    })
+  }
+
+  // Убираем статусы с нулевыми значениями для более чистого графика
+  return result.filter(item => item.value > 0)
 }
 
 export async function getRecentOrders(limit: number = 5) {
@@ -74,6 +176,7 @@ export async function getRecentOrders(limit: number = 5) {
       user: {
         select: {
           name: true,
+          email: true
         },
       },
     },
@@ -84,6 +187,34 @@ export async function getRecentOrders(limit: number = 5) {
     ...order,
     total: Number(order.total)
   }));
+}
+
+export async function getLowStockProducts(limit: number = 5, threshold: number = 10) {
+  const products = await prisma.product.findMany({
+    take: limit,
+    where: {
+      stock: {
+        lte: threshold
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      stock: true,
+      Image: {
+        take: 1,
+        select: {
+          url: true
+        }
+      }
+    },
+    orderBy: {
+      stock: 'asc'
+    }
+  })
+
+  return products
 }
 
 export async function getTopProducts(limit: number = 10) {
@@ -102,10 +233,10 @@ export async function getTopProducts(limit: number = 10) {
     take: limit,
   })
 
-  // Get product details
+  // Get product details using findMany with a where clause instead of findUnique
   const productsWithDetails = await Promise.all(
     topProducts.map(async (item) => {
-      const product = await prisma.product.findUnique({
+      const products = await prisma.product.findMany({
         where: { id: item.productId },
         select: {
           id: true,
@@ -119,18 +250,122 @@ export async function getTopProducts(limit: number = 10) {
             take: 1,
           },
         },
+        take: 1
       })
+      
+      const product = products[0] || null
+      
+      if (!product) return null
       
       return {
         ...product,
-        imageUrl: product?.Image[0]?.url,
         totalSold: item._sum.quantity || 0,
         revenue: Number(item._sum.price) || 0,
+        imageUrl: product.Image[0]?.url || null
       }
     })
   )
 
-  return productsWithDetails
+  return productsWithDetails.filter(Boolean)
+}
+
+export async function getTopCustomers(limit: number = 5) {
+  // Group orders by userId and sum the totals
+  const topSpenders = await prisma.order.groupBy({
+    by: ['userId'],
+    _sum: {
+      total: true
+    },
+    orderBy: {
+      _sum: {
+        total: 'desc'
+      }
+    },
+    take: limit
+  })
+  
+  // Get user details
+  const users = await prisma.user.findMany({
+    where: {
+      id: {
+        in: topSpenders.map(item => item.userId)
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true
+    }
+  })
+  
+  // Combine the data
+  return topSpenders.map(spender => {
+    const user = users.find(u => u.id === spender.userId)
+    return {
+      ...user,
+      totalSpent: Number(spender._sum.total || 0)
+    }
+  })
+}
+
+export async function getCustomerAcquisition(timeframe: 'daily' | 'weekly' | 'monthly' = 'daily', days: number = 30) {
+  const endDate = new Date()
+  const startDate = subDays(endDate, days)
+  
+  // Get total number of customers
+  const totalCustomers = await prisma.user.count({
+    where: {
+      role: 'USER'
+    }
+  })
+  
+  // Create date intervals based on timeframe
+  const dateIntervals = eachDayOfInterval({
+    start: startDate,
+    end: endDate
+  })
+  
+  // Get acquisition data for each interval
+  const timeSeries = await Promise.all(
+    dateIntervals.map(async (date) => {
+      let periodStart: Date
+      let periodEnd: Date
+      
+      if (timeframe === 'daily') {
+        periodStart = startOfDay(date)
+        periodEnd = endOfDay(date)
+      } else if (timeframe === 'weekly') {
+        // For simplicity, we're using the day as a representative of its week
+        periodStart = startOfDay(date)
+        periodEnd = endOfDay(date)
+      } else {
+        // Monthly
+        periodStart = startOfMonth(date)
+        periodEnd = endOfMonth(date)
+      }
+      
+      const count = await prisma.user.count({
+        where: {
+          role: 'USER',
+          createdAt: {
+            gte: periodStart,
+            lte: periodEnd
+          }
+        }
+      })
+      
+      return {
+        date: format(date, 'yyyy-MM-dd'),
+        value: count
+      }
+    })
+  )
+  
+  return {
+    totalCustomers,
+    timeSeries
+  }
 }
 
 export async function getInventoryData() {
@@ -209,11 +444,11 @@ export async function getAllOrders(limit?: number) {
   }))
 }
 
-export async function getCustomers(limit?: number) {
+export async function getCustomers(limit: number = 10) {
   const customers = await prisma.user.findMany({
     take: limit,
     where: {
-      role: 'USER',
+      role: 'USER'
     },
     select: {
       id: true,
@@ -224,25 +459,23 @@ export async function getCustomers(limit?: number) {
       orders: {
         select: {
           id: true,
-          total: true,
-        },
-      },
+          total: true
+        }
+      }
     },
     orderBy: {
-      createdAt: 'desc',
-    },
+      createdAt: 'desc'
+    }
   })
-
-  // Calculate total spent and order count
+  
+  // Calculate order count and total spent for each customer
   return customers.map(customer => {
-    const totalSpent = customer.orders.reduce(
-      (sum, order) => sum + Number(order.total),
-      0
-    )
+    const orderCount = customer.orders.length
+    const totalSpent = customer.orders.reduce((sum, order) => sum + Number(order.total), 0)
     
     return {
       ...customer,
-      orderCount: customer.orders.length,
+      orderCount,
       totalSpent
     }
   })

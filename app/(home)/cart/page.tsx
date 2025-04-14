@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useCart } from '@/store/use-cart'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +17,30 @@ import Link from 'next/link'
 
 export default function CartPage() {
   const cart = useCart()
+  const [isClient, setIsClient] = useState(false)
+
+  // Отметка о том, что компонент работает на клиенте
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // Если компонент на сервере, показываем загрузку
+  if (!isClient) {
+    return (
+      <div className='container mx-auto px-4 py-16'>
+        <Card>
+          <CardHeader>
+            <CardTitle>Загрузка корзины...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='text-muted-foreground'>
+              Загрузка данных о корзине...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   if (cart.items.length === 0) {
     return (
@@ -39,11 +64,22 @@ export default function CartPage() {
     )
   }
 
+  // Рассчитываем общую сумму напрямую в компоненте с безопасным преобразованием
+  const totalSum = cart.items.reduce(
+    (sum, item) => {
+      const price = Number(item.price)
+      const quantity = Number(item.quantity)
+      if (isNaN(price) || isNaN(quantity)) return sum
+      return sum + (price * quantity)
+    },
+    0
+  )
+
   return (
     <div className='container mx-auto px-4 py-16'>
       <Card>
         <CardHeader>
-          <CardTitle>Shopping Cart</CardTitle>
+          <CardTitle>Shopping Cart ({cart.items.length} items)</CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
           {cart.items.map((item) => (
@@ -67,7 +103,7 @@ export default function CartPage() {
                   {item.name}
                 </Link>
                 <span className='text-muted-foreground'>
-                  ${item.price.toFixed(2)}
+                  €{Number(item.price).toFixed(2)}
                 </span>
               </div>
               <div className='flex items-center gap-2'>
@@ -93,7 +129,7 @@ export default function CartPage() {
               </div>
               <div className='text-right min-w-[100px]'>
                 <div className='font-medium'>
-                  ${(item.price * item.quantity).toFixed(2)}
+                  €{(Number(item.price) * item.quantity).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -101,7 +137,7 @@ export default function CartPage() {
         </CardContent>
         <CardFooter className='flex justify-between'>
           <div className='text-lg font-bold'>
-            Total: ${cart.total.toFixed(2)}
+            Total: €{totalSum.toFixed(2)}
           </div>
           <div className='flex gap-2'>
             <Button variant='outline' asChild>

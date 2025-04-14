@@ -111,7 +111,7 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                     <div className='text-right'>
-                      <p className='font-medium'>${Number(order.total).toFixed(2)}</p>
+                      <p className='font-medium'>€{Number(order.total).toFixed(2)}</p>
                       <p className='text-sm capitalize text-muted-foreground'>
                         {order.status.toLowerCase()}
                       </p>

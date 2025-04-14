@@ -14,7 +14,10 @@ const customJestConfig = {
     '^@/app/(.*)$': '<rootDir>/app/$1',
     '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
     '^@/store/(.*)$': '<rootDir>/store/$1',
-    '^@/auth$': '<rootDir>/auth.ts'
+    '^@/auth$': '<rootDir>/auth.ts',
+    // Mocking CSS modules and images
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js'
   },
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
@@ -31,11 +34,17 @@ const customJestConfig = {
     '!**/.next/**',
     '!**/coverage/**',
   ],
-  // Handle ESM modules
+  // Handle ESM modules - расширен список игнорируемых пакетов
   transformIgnorePatterns: [
-    '/node_modules/(?!lucide-react|@radix-ui|).+\\.js$'
+    '/node_modules/(?!(lucide-react|@radix-ui|class-variance-authority|embla-carousel-react|recharts|tailwind-merge|next|uploadthing|@uploadthing)/)'
   ],
-  // Add any other specific settings here
+  // Используем babel для транспиляции
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
+  },
+  // Дополнительные настройки для ESM
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  verbose: true
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config

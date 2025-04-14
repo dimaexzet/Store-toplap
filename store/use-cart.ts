@@ -17,12 +17,16 @@ type CartStore = {
   updateQuantity: (productId: string, quantity: number) => void
   clearCart: () => void
   total: number
+  hydrated: boolean
+  setHydrated: (state: boolean) => void
 }
 
 export const useCart = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      hydrated: false,
+      setHydrated: (state) => set({ hydrated: state }),
       addItem: (item) => {
         set((state) => {
           const existingItem = state.items.find(
@@ -42,7 +46,11 @@ export const useCart = create<CartStore>()(
           return {
             items: [
               ...state.items,
-              { ...item, id: `cart_${item.productId}_${Date.now()}` },
+              { 
+                ...item, 
+                price: Number(item.price), 
+                id: `cart_${item.productId}_${Date.now()}` 
+              },
             ],
           }
         })
@@ -64,14 +72,23 @@ export const useCart = create<CartStore>()(
       clearCart: () => set({ items: [] }),
       get total() {
         return get().items.reduce(
-          (total, item) => total + item.price * item.quantity,
+          (total, item) => total + (Number(item.price) * item.quantity),
           0
         )
       },
     }),
     {
       name: 'shopping-cart',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') {
+          return localStorage
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {}
+        }
+      }),
       skipHydration: true,
     }
   )

@@ -12,6 +12,7 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Mail } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface Customer {
   id: string
@@ -70,14 +71,16 @@ export function TopCustomersTable({ customers }: TopCustomersTableProps) {
                 <TableCell>
                   <div className="font-medium">{customer.totalOrders}</div>
                   <div className="text-sm text-muted-foreground">
-                    ${customer.averageOrderValue.toFixed(2)} avg
+                    <Badge className="h-5 w-fit rounded" variant="outline">
+                      €{customer.averageOrderValue.toFixed(2)} avg
+                    </Badge>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="w-full space-y-1">
                     <div className="flex justify-between">
                       <span className="text-sm font-medium">
-                        ${customer.totalSpent.toFixed(2)}
+                        €{customer.totalSpent.toFixed(2)}
                       </span>
                       <span className="text-sm text-muted-foreground">{percentage}%</span>
                     </div>

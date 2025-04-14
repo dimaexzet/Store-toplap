@@ -113,7 +113,8 @@ export default async function TopProductsPage() {
             <DollarSign className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>${totalRevenue.toFixed(2)}</div>
+            <div className='text-sm text-muted-foreground'>Total revenue</div>
+            <div className='text-2xl font-bold'>€{totalRevenue.toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>

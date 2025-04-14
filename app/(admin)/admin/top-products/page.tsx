@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { formatCurrency } from '@/lib/utils'
 
 export default async function TopProductsPage() {
-  const topProducts = await getTopProducts(10)
+  const topProducts = await getTopProducts(10) || []
 
   return (
     <div className='space-y-8'>
@@ -38,7 +38,7 @@ export default async function TopProductsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {topProducts.map((product) => (
+                    {topProducts.map((product) => product && (
                       <tr key={product.id} className="border-b">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
@@ -57,16 +57,18 @@ export default async function TopProductsPage() {
                                 </div>
                               )}
                             </div>
-                            <span>{product.name}</span>
+                            <span>{product.name || 'Unnamed Product'}</span>
                           </div>
                         </td>
-                        <td className="p-4">{formatCurrency(Number(product.price))}</td>
-                        <td className="p-4">{product.totalSold}</td>
-                        <td className="p-4">{formatCurrency(product.revenue)}</td>
+                        <td className="p-4">{formatCurrency(Number(product.price) || 0)}</td>
+                        <td className="p-4">{product.totalSold || 0}</td>
+                        <td className="p-4">{formatCurrency(product.revenue || 0)}</td>
                         <td className="p-4">
                           <div className="flex items-center">
-                            <span className={product.stock && product.stock < 10 ? 'text-red-500' : ''}>{product.stock || 0}</span>
-                            {product.stock && product.stock < 10 && (
+                            <span className={product.stock != null && product.stock < 10 ? 'text-red-500' : ''}>
+                              {product.stock != null ? product.stock : 0}
+                            </span>
+                            {product.stock != null && product.stock < 10 && (
                               <span className="ml-2 px-2 py-1 text-xs rounded-full bg-red-100 text-red-600">
                                 Low stock
                               </span>

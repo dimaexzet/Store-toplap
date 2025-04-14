@@ -275,7 +275,9 @@ describe('Analytics Utilities', () => {
           name: 'Popular Item',
           price: 99.99,
           Image: [{ url: 'image.jpg' }],
-          soldQuantity: 10
+          totalSold: 10,
+          revenue: 0,
+          imageUrl: 'image.jpg'
         }
       ])
     })

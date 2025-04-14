@@ -149,7 +149,7 @@ export function LowStockTable({ products, threshold }: LowStockTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>{product.category.name}</TableCell>
-                <TableCell>${Number(product.price).toFixed(2)}</TableCell>
+                <TableCell>€{Number(product.price).toFixed(2)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
                     {getStockLevelIcon(product.stock)}

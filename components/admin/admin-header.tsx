@@ -8,8 +8,6 @@ import {
   ShoppingCart,
   Package,
   Users,
-  Settings,
-  BarChart,
   ShoppingBag,
   Warehouse,
   TrendingUp,
@@ -19,7 +17,6 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Top Products', href: '/admin/top-products', icon: TrendingUp },
@@ -28,7 +25,6 @@ const navigation = [
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
 export function AdminHeader() {

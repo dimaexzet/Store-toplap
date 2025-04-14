@@ -98,14 +98,14 @@ export function TopProductsTable({ products, metric, title }: TopProductsTablePr
                       <span className="text-sm font-medium">
                         {metric === 'quantity' 
                           ? value 
-                          : `$${value.toFixed(2)}`}
+                          : `€${value.toFixed(2)}`}
                       </span>
                       <span className="text-sm text-muted-foreground">{percentage}%</span>
                     </div>
                     <Progress value={percentage} className="h-2" />
                   </div>
                 </TableCell>
-                <TableCell>${Number(product.price).toFixed(2)}</TableCell>
+                <TableCell>€{Number(product.price).toFixed(2)}</TableCell>
                 <TableCell>
                   <Badge 
                     variant={stockStatus.color === 'destructive' ? 'destructive' : 'outline'}

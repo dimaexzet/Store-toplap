@@ -23,11 +23,11 @@ describe('Formatting Functions', () => {
     expect(formatPrice(1234567.89)).toBe('$1,234,567.89')
   })
 
-  test('formatCurrency formats a number as USD currency', () => {
-    expect(formatCurrency(10)).toBe('$10.00')
-    expect(formatCurrency(10.5)).toBe('$10.50')
-    expect(formatCurrency(1000)).toBe('$1,000.00')
-    expect(formatCurrency(1234567.89)).toBe('$1,234,567.89')
+  test('formatCurrency formats a number as EUR currency', () => {
+    expect(formatCurrency(10)).toBe('€10.00')
+    expect(formatCurrency(10.5)).toBe('€10.50')
+    expect(formatCurrency(1000)).toBe('€1,000.00')
+    expect(formatCurrency(1234567.89)).toBe('€1,234,567.89')
   })
 })
 

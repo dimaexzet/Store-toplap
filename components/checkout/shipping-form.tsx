@@ -53,13 +53,47 @@ export function ShippingForm() {
     try {
       setLoading(true)
 
-      const subtotal = cart.items.reduce((total, item) => {
-        return total + item.price * item.quantity
+      // Проверяем наличие товаров в корзине
+      if (!cart.items.length) {
+        toast({
+          variant: 'destructive',
+          title: 'Cart is empty',
+          description: 'Please add some products to your cart before checkout.',
+        })
+        return
+      }
+
+      // Явно преобразуем все цены в числа
+      const cartItems = cart.items.map(item => ({
+        ...item,
+        price: Number(item.price)
+      }))
+
+      // Расчет с проверкой на NaN и преобразованием в числа
+      const subtotal = cartItems.reduce((total, item) => {
+        const itemPrice = Number(item.price)
+        const itemQuantity = Number(item.quantity)
+        
+        if (isNaN(itemPrice) || isNaN(itemQuantity)) {
+          console.error('Invalid price or quantity', { item })
+          return total
+        }
+        
+        return total + (itemPrice * itemQuantity)
       }, 0)
 
       const shipping = 10 // Fixed shipping cost
       const tax = subtotal * 0.1 // 10% tax
       const total = subtotal + shipping + tax
+
+      console.log('Order data:', {
+        items: cartItems,
+        shippingInfo: data,
+        subtotal,
+        tax,
+        shipping,
+        total,
+      })
 
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -67,7 +101,7 @@ export function ShippingForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          items: cart.items,
+          items: cartItems,
           shippingInfo: data,
           subtotal,
           tax,
@@ -77,7 +111,9 @@ export function ShippingForm() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create order')
+        const errorData = await response.text()
+        console.error('Response error:', response.status, errorData)
+        throw new Error(`Failed to create order: ${errorData}`)
       }
 
       const { orderId } = await response.json()
@@ -92,7 +128,7 @@ export function ShippingForm() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to create order. Please try again.',
       })
     } finally {
       setLoading(false)

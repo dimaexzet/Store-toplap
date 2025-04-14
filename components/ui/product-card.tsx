@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Star } from 'lucide-react'
+import { Star, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,6 +17,7 @@ import {
 import { useCart } from '@/store/use-cart'
 import { useToast } from '@/hooks/use-toast'
 import { ToastAction } from '@/components/ui/toast'
+import { CartSheet } from '@/components/ui/cart-sheet'
 
 interface ProductCardProps {
   product: {
@@ -50,6 +51,9 @@ export function ProductCard({
 }: ProductCardProps) {
   const cart = useCart()
   const { toast } = useToast()
+  const [sheetOpen, setSheetOpen] = React.useState(false)
+  const [addedItem, setAddedItem] = React.useState<any>(null)
+  
   const averageRating =
     product.reviews && product.reviews.length > 0
       ? product.reviews.reduce((acc, review) => acc + review.rating, 0) /
@@ -68,23 +72,18 @@ export function ProductCard({
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault() // Prevent navigation when clicking the button
-    cart.addItem({
+    
+    const item = {
       productId: product.id,
       name: product.name,
       price: Number(product.price),
       image: imageUrl,
       quantity: 1,
-    })
-
-    toast({
-      title: 'Added to cart',
-      description: `${product.name} added to your cart`,
-      action: (
-        <ToastAction altText='View cart' asChild>
-          <Link href='/cart'>View Cart</Link>
-        </ToastAction>
-      ),
-    })
+    }
+    
+    cart.addItem(item)
+    setAddedItem(item)
+    setSheetOpen(true)
   }
 
   // Determine if we should show highlighted content
@@ -92,66 +91,75 @@ export function ProductCard({
   const hasHighlightedDescription = showHighlights && product.descriptionHighlighted;
 
   return (
-    <Card className={cn('overflow-hidden group', className)}>
-      <Link href={`/products/${product.id}`}>
-        <div className='aspect-square overflow-hidden relative bg-gray-100 dark:bg-gray-800'>
-          <Image
-            src={imageUrl}
-            alt={product.name}
-            fill
-            sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
-            className='object-cover transition-transform duration-300 group-hover:scale-105'
-            priority={shouldPrioritize}
-            loading={shouldPrioritize ? 'eager' : 'lazy'}
-            placeholder="blur"
-            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YxZjFmMSIvPjwvc3ZnPg=="
-          />
-        </div>
-        <CardHeader className='p-4'>
-          <CardTitle className='line-clamp-1'>
-            {hasHighlightedName ? (
-              <span dangerouslySetInnerHTML={{ __html: product.nameHighlighted! }} />
-            ) : (
-              product.name
-            )}
-          </CardTitle>
-          <CardDescription className='line-clamp-2'>
-            {hasHighlightedDescription ? (
-              <span dangerouslySetInnerHTML={{ __html: product.descriptionHighlighted! }} />
-            ) : (
-              product.description
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className='p-4 pt-0'>
-          <div className='flex items-center gap-2'>
-            <div className='flex items-center'>
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    'w-4 h-4',
-                    i < Math.round(averageRating)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'fill-gray-200 text-gray-200'
-                  )}
-                />
-              ))}
+    <>
+      <Card className={cn('overflow-hidden group', className)}>
+        <Link href={`/products/${product.id}`}>
+          <div className='aspect-square overflow-hidden relative bg-gray-100 dark:bg-gray-800'>
+            <Image
+              src={imageUrl}
+              alt={product.name}
+              fill
+              sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
+              className='object-cover transition-transform duration-300 group-hover:scale-105'
+              priority={shouldPrioritize}
+              loading={shouldPrioritize ? 'eager' : 'lazy'}
+              placeholder="blur"
+              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YxZjFmMSIvPjwvc3ZnPg=="
+            />
+          </div>
+          <CardHeader className='p-4'>
+            <CardTitle className='line-clamp-1'>
+              {hasHighlightedName ? (
+                <span dangerouslySetInnerHTML={{ __html: product.nameHighlighted! }} />
+              ) : (
+                product.name
+              )}
+            </CardTitle>
+            <CardDescription className='line-clamp-2'>
+              {hasHighlightedDescription ? (
+                <span dangerouslySetInnerHTML={{ __html: product.descriptionHighlighted! }} />
+              ) : (
+                product.description
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='p-4 pt-0'>
+            <div className='flex items-center gap-2'>
+              <div className='flex items-center'>
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={cn(
+                      'w-4 h-4',
+                      i < Math.round(averageRating)
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'fill-gray-200 text-gray-200'
+                    )}
+                  />
+                ))}
+              </div>
+              <span className='text-sm text-gray-600'>
+                ({product.reviews?.length || 0})
+              </span>
             </div>
-            <span className='text-sm text-gray-600'>
-              ({product.reviews?.length || 0})
-            </span>
-          </div>
-          <div className='mt-2 text-xl font-bold'>
-            ${Number(product.price).toFixed(2)}
-          </div>
-        </CardContent>
-      </Link>
-      <CardFooter className='p-4 pt-0'>
-        <Button className='w-full' onClick={handleAddToCart}>
-          Add to Cart
-        </Button>
-      </CardFooter>
-    </Card>
+            <div className='mt-2 text-xl font-bold'>
+              €{Number(product.price).toFixed(2)}
+            </div>
+          </CardContent>
+        </Link>
+        <CardFooter className='p-4 pt-0'>
+          <Button className='w-full' onClick={handleAddToCart}>
+            Add to Cart
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      {/* Используем общий компонент для отображения товара в корзине */}
+      <CartSheet 
+        open={sheetOpen} 
+        onOpenChange={setSheetOpen} 
+        item={addedItem} 
+      />
+    </>
   )
 }

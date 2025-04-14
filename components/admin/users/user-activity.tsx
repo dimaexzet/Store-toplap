@@ -82,7 +82,7 @@ export function UserActivity({ userId, orders }: UserActivityProps) {
         id: `order-created-${order.id}`,
         icon: <ShoppingBag className="h-5 w-5 text-primary" />,
         title: 'Placed an order',
-        description: `Order #${order.id.substring(0, 8)} worth $${order.total.toFixed(2)}`,
+        description: `Order #${order.id.substring(0, 8)} worth €${order.total.toFixed(2)}`,
         date: new Date(order.createdAt),
         status: 'success'
       }]

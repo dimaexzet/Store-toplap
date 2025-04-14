@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
+import { useMemo } from 'react'
 
 interface RevenueData {
   date: string
@@ -22,16 +23,40 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ data }: RevenueChartProps) {
+  // Убедимся, что данные не пустые и корректно отформатированы
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) {
+      // Если данных нет, создадим фиктивные данные для 7 дней
+      const dates = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      return dates.map(date => ({ date, revenue: 0 }))
+    }
+    return data
+  }, [data])
+
+  // Найдем максимальное значение дохода для настройки масштаба графика
+  const maxRevenue = useMemo(() => {
+    const max = Math.max(...chartData.map(item => item.revenue))
+    return max > 0 ? max : 100 // Если все значения нулевые, устанавливаем базовую шкалу
+  }, [chartData])
+
+  // Вычисляем общий доход
+  const totalRevenue = useMemo(() => {
+    return chartData.reduce((sum, item) => sum + item.revenue, 0)
+  }, [chartData])
+
   return (
     <Card className='col-span-full lg:col-span-4'>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Revenue Overview</CardTitle>
+        <div className="text-sm text-muted-foreground">
+          Total: {formatCurrency(totalRevenue)}
+        </div>
       </CardHeader>
       <CardContent>
         <div className='h-[400px]'>
           <ResponsiveContainer width='100%' height='100%'>
             <AreaChart
-              data={data}
+              data={chartData}
               margin={{
                 top: 10,
                 right: 30,
@@ -52,6 +77,8 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: '#888888', fontSize: 12 }}
+                domain={[0, maxRevenue * 1.1]} // Устанавливаем диапазон с запасом вверху
+                allowDecimals={false}
               />
               <Tooltip
                 content={({ active, payload }) => {

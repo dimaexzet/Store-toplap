@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,16 @@ import { useCart } from '@/store/use-cart'
 
 export function CartBadge() {
   const cart = useCart()
-  const itemCount = cart.items.reduce((total, item) => total + item.quantity, 0)
+  const [isClient, setIsClient] = useState(false)
+  
+  // Отметка о том, что компонент работает на клиенте
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
+  const itemCount = isClient 
+    ? cart.items.reduce((total, item) => total + item.quantity, 0)
+    : 0
 
   return (
     <Button variant='ghost' size='icon' asChild className='relative'>

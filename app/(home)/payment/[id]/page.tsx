@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import prisma from '@/lib/prisma'
 import { PaymentForm } from '@/components/checkout/payment-form'
+import { MockPaymentForm } from '@/components/checkout/mock-payment-form'
 import { OrderSummary } from '@/components/checkout/order-summary'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -10,6 +11,9 @@ type tParams = Promise<{ id: string }>
 interface PageProps {
   params: tParams
 }
+
+// Установка флага для переключения между mock и реальной оплатой
+const USE_MOCK_PAYMENT = true
 
 export default async function PaymentPage({ params }: PageProps) {
   const session = await auth()
@@ -53,7 +57,11 @@ export default async function PaymentPage({ params }: PageProps) {
               <CardTitle>Payment Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <PaymentForm orderId={id} />
+              {USE_MOCK_PAYMENT ? (
+                <MockPaymentForm orderId={id} />
+              ) : (
+                <PaymentForm orderId={id} />
+              )}
             </CardContent>
           </Card>
         </div>
