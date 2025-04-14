@@ -10,6 +10,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { CartBadge } from '@/components/layout/cart-badge'
 import { AuthModal } from '@/components/layout/auth-modal'
 import { SearchAutocomplete } from '@/components/search/search-autocomplete'
+import { CategoryMenu } from '@/components/layout/category-menu'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,13 +63,10 @@ export function Header() {
               </Link>
             </div>
 
-            {/* Products Catalog Link */}
-            <Link
-              href='/products'
-              className='ml-6 text-sm font-medium text-gray-700 hover:text-gray-900'
-            >
-              Products
-            </Link>
+            {/* Products Catalog Menu */}
+            <div className="ml-6">
+              <CategoryMenu />
+            </div>
 
             {/* Search */}
             <div className='hidden sm:block flex-1 max-w-2xl mx-8'>
