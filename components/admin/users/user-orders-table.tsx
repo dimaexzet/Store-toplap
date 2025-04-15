@@ -56,7 +56,7 @@ export function UserOrdersTable({ orders }: UserOrdersTableProps) {
   if (orders.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        This user hasn't placed any orders yet.
+        This user hasn&apos;t placed any orders yet.
       </div>
     )
   }

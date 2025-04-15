@@ -30,7 +30,6 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
   const router = useRouter()
   const { id: userId } = use(params)
   const [isLoading, setIsLoading] = useState(false)
-  const [user, setUser] = useState<UserFormValues | null>(null)
 
   // Инициализация формы
   const form = useForm<UserFormValues>({
@@ -60,8 +59,6 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
           email: userData.email || '',
           role: userData.role || 'USER',
         })
-        
-        setUser(userData)
       } catch (error) {
         console.error('Error fetching user:', error)
         toast({
@@ -131,7 +128,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
         <CardHeader>
           <CardTitle>User Information</CardTitle>
           <CardDescription>
-            Update the user's profile details
+            Update the user&apos;s profile details
           </CardDescription>
         </CardHeader>
         <Form {...form}>

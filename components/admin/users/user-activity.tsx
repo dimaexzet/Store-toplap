@@ -1,12 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { OrderStatus } from '@prisma/client'
 import { 
   ShoppingBag, 
   ShoppingCart, 
-  CreditCard, 
   Truck, 
   CheckCircle,
   XCircle,

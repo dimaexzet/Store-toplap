@@ -111,9 +111,13 @@ async function getUser(id: string) {
   }
 }
 
-export default async function UserPage({ params }: UserPageProps) {
+export default function UserPage({ params }: UserPageProps) {
   const { id } = use(params)
-  const user = await getUser(id)
+  return <UserDetails userId={id} />;
+}
+
+async function UserDetails({ userId }: { userId: string }) {
+  const user = await getUser(userId)
 
   return (
     <div className="space-y-8">

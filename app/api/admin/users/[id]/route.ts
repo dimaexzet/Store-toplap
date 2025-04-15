@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
+import { Prisma } from '@prisma/client'
 
 type tParams = Promise<{ id: string }>
 
@@ -142,7 +143,7 @@ export async function PATCH(
     }
     
     // Build update data
-    const updateData: any = {}
+    const updateData: Prisma.UserUpdateInput = {}
     if (name) updateData.name = name
     if (email) updateData.email = email
     

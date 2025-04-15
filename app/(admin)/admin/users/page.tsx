@@ -17,6 +17,28 @@ import { UsersList } from '@/components/admin/users/users-list'
 import { Role, Prisma } from '@prisma/client'
 import Link from 'next/link'
 
+// Добавить типы для пользовательских данных
+interface UserWithOrders {
+  id: string;
+  name: string | null;
+  email: string;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+  orders: {
+    id: string;
+    total: number;
+  }[];
+  _count: {
+    orders: number;
+  };
+}
+
+interface FormattedUser extends UserWithOrders {
+  orderCount: number;
+  totalSpent: number;
+}
+
 interface UsersPageProps {
   searchParams: Promise<{
     query?: string
@@ -77,9 +99,9 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const totalPages = Math.ceil(totalUsers / pageSize)
   
   // Format users data
-  const formattedUsers = users.map((user: any) => {
+  const formattedUsers = users.map((user: UserWithOrders) => {
     const totalSpent = user.orders.reduce(
-      (sum: number, order: any) => sum + Number(order.total),
+      (sum: number, order: { total: number }) => sum + Number(order.total),
       0
     )
     
