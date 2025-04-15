@@ -21,7 +21,7 @@ async function sendMailgunEmail(to: string, subject: string, html: string) {
     
     // Создаем данные формы для отправки
     const formData = new URLSearchParams();
-    formData.append('from', `${SENDER_NAME} <postmaster@${MAILGUN_DOMAIN}>`);
+    formData.append('from', `${SENDER_NAME} <${SENDER_EMAIL}>`);
     formData.append('to', to);
     formData.append('subject', subject);
     formData.append('html', html);
