@@ -16,12 +16,33 @@ import {
 import { UsersList } from '@/components/admin/users/users-list'
 import { Role, Prisma } from '@prisma/client'
 import Link from 'next/link'
+import { Decimal } from '@prisma/client/runtime/library'
 
 // Добавить типы для пользовательских данных
 interface UserWithOrders {
   id: string;
   name: string | null;
   email: string;
+  image: string | null;
+  emailVerified: Date | null;
+  password: string | null;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+  orders: {
+    id: string;
+    total: Decimal;
+  }[];
+  _count: {
+    orders: number;
+  };
+}
+
+interface FormattedUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
   role: Role;
   createdAt: Date;
   updatedAt: Date;
@@ -32,9 +53,6 @@ interface UserWithOrders {
   _count: {
     orders: number;
   };
-}
-
-interface FormattedUser extends UserWithOrders {
   orderCount: number;
   totalSpent: number;
 }
@@ -99,14 +117,18 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const totalPages = Math.ceil(totalUsers / pageSize)
   
   // Format users data
-  const formattedUsers = users.map((user: UserWithOrders) => {
+  const formattedUsers: FormattedUser[] = users.map((user: UserWithOrders) => {
     const totalSpent = user.orders.reduce(
-      (sum: number, order: { total: number }) => sum + Number(order.total),
+      (sum: number, order) => sum + Number(order.total),
       0
     )
     
     return {
       ...user,
+      orders: user.orders.map(order => ({
+        ...order,
+        total: Number(order.total)
+      })),
       orderCount: user._count.orders,
       totalSpent,
     }
