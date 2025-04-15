@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/components/ui/use-toast'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
+import { use } from 'react'
 
 // Валидационная схема для формы
 const userFormSchema = z.object({
@@ -25,9 +26,9 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const userId = params.id
+  const { id: userId } = use(params)
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<UserFormValues | null>(null)
 
@@ -52,6 +53,8 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         }
         
         const userData = await response.json()
+        
+        // Ensure values are properly converted before passing to the form
         form.reset({
           name: userData.name || '',
           email: userData.email || '',

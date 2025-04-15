@@ -96,8 +96,13 @@ export async function GET(
         items: order.items.map(item => ({
           ...item,
           price: Number(item.price),
+          product: item.product
         })),
       })),
+      reviews: user.reviews ? user.reviews.map(review => ({
+        ...review,
+        rating: Number(review.rating)
+      })) : [],
     }
     
     return NextResponse.json(formattedUser)

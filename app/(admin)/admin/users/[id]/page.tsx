@@ -11,6 +11,7 @@ import { Calendar, Mail, MapPin, Phone, User, ShieldCheck, Edit } from 'lucide-r
 import Link from 'next/link'
 import { UserOrdersTable } from '@/components/admin/users/user-orders-table'
 import { UserActivity } from '@/components/admin/users/user-activity'
+import { use } from 'react'
 
 interface UserPageProps {
   params: Promise<{ id: string }>
@@ -34,6 +35,14 @@ async function getUser(id: string) {
         },
         orderBy: {
           createdAt: 'desc'
+        }
+      },
+      reviews: {
+        orderBy: {
+          createdAt: 'desc'
+        },
+        include: {
+          product: true
         }
       },
       _count: {
@@ -60,9 +69,24 @@ async function getUser(id: string) {
     total: Number(order.total),
     items: order.items.map(item => ({
       ...item,
-      price: Number(item.price)
+      price: Number(item.price),
+      product: {
+        ...item.product,
+        price: item.product.price ? Number(item.product.price) : undefined,
+        Image: item.product.Image
+      }
     }))
   }))
+
+  // Format reviews if they exist
+  const formattedReviews = user.reviews ? user.reviews.map(review => ({
+    ...review,
+    rating: Number(review.rating),
+    product: {
+      ...review.product,
+      price: review.product.price ? Number(review.product.price) : undefined
+    }
+  })) : []
 
   const averageOrderValue = formattedOrders.length 
     ? totalSpent / formattedOrders.length 
@@ -76,6 +100,7 @@ async function getUser(id: string) {
   return {
     ...user,
     orders: formattedOrders,
+    reviews: formattedReviews,
     metrics: {
       totalSpent,
       averageOrderValue,
@@ -87,7 +112,7 @@ async function getUser(id: string) {
 }
 
 export default async function UserPage({ params }: UserPageProps) {
-  const { id } = await params
+  const { id } = use(params)
   const user = await getUser(id)
 
   return (
