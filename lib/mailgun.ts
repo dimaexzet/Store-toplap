@@ -1,15 +1,54 @@
-import formData from 'form-data';
-import Mailgun from 'mailgun.js';
 import { formatCurrency } from '@/lib/utils';
 
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'order@amazona.shop';
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'mg.yourdomain.com';
+// Конфигурация Mailgun
+const SENDER_NAME = process.env.SENDER_NAME || 'Toplap';
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'info@toplap.store';
+const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'sandbox10c96c42fded4deaa2c239a8c091d20b.mailgun.org';
+const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
 
-// Инициализация Mailgun
-const mailgun = new Mailgun(formData);
-const mg = process.env.MAILGUN_API_KEY 
-  ? mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY })
-  : null;
+/**
+ * Базовый метод для отправки почты через Mailgun API напрямую
+ */
+async function sendMailgunEmail(to: string, subject: string, html: string) {
+  if (!MAILGUN_API_KEY) {
+    console.warn('Email sending skipped - Mailgun API key is missing');
+    return { success: false, error: 'API key not configured' };
+  }
+
+  try {
+    // Создаем базовую строку авторизации
+    const authHeader = 'Basic ' + Buffer.from(`api:${MAILGUN_API_KEY}`).toString('base64');
+    
+    // Создаем данные формы для отправки
+    const formData = new URLSearchParams();
+    formData.append('from', `${SENDER_NAME} <postmaster@${MAILGUN_DOMAIN}>`);
+    formData.append('to', to);
+    formData.append('subject', subject);
+    formData.append('html', html);
+    
+    // Выполняем запрос к API Mailgun
+    const response = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Mailgun API error:', response.status, errorText);
+      return { success: false, error: { status: response.status, details: errorText } };
+    }
+    
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    return { success: false, error };
+  }
+}
 
 /**
  * Sends an order confirmation email to the customer
@@ -23,12 +62,6 @@ export async function sendOrderConfirmationEmail(
   total: number
 ) {
   try {
-    // Skip sending if Mailgun client wasn't initialized
-    if (!mg) {
-      console.warn('Email sending skipped - Mailgun API key is missing');
-      return { success: false, error: 'API key not configured' };
-    }
-    
     // Format the order items as HTML
     const orderItemsHtml = orderItems
       .map(
@@ -119,18 +152,15 @@ export async function sendOrderConfirmationEmail(
         
         <p>If you have any questions, please contact our customer service.</p>
         <p>Thank you for shopping with us!</p>
-        <p>The Amazona Team</p>
+        <p>The ${SENDER_NAME} Team</p>
       </div>
     `;
 
-    const data = await mg.messages.create(MAILGUN_DOMAIN, {
-      from: SENDER_EMAIL,
-      to: email,
-      subject: `Order Confirmation #${orderId.substring(0, 8)}`,
-      html: emailHtml
-    });
-
-    return { success: true, data };
+    return await sendMailgunEmail(
+      email,
+      `Order Confirmation #${orderId.substring(0, 8)}`,
+      emailHtml
+    );
   } catch (error) {
     console.error('Failed to send order confirmation email:', error);
     return { success: false, error };
@@ -148,12 +178,6 @@ export async function sendShippingUpdateEmail(
   trackingNumber?: string
 ) {
   try {
-    // Skip sending if Mailgun client wasn't initialized
-    if (!mg) {
-      console.warn('Email sending skipped - Mailgun API key is missing');
-      return { success: false, error: 'API key not configured' };
-    }
-
     // Customize message based on status
     let statusMessage = '';
     let subject = '';
@@ -195,18 +219,11 @@ export async function sendShippingUpdateEmail(
         </div>
         
         <p>Thank you for shopping with us!</p>
-        <p>The Amazona Team</p>
+        <p>The ${SENDER_NAME} Team</p>
       </div>
     `;
 
-    const data = await mg.messages.create(MAILGUN_DOMAIN, {
-      from: SENDER_EMAIL,
-      to: email,
-      subject: subject,
-      html: emailHtml
-    });
-
-    return { success: true, data };
+    return await sendMailgunEmail(email, subject, emailHtml);
   } catch (error) {
     console.error('Failed to send shipping update email:', error);
     return { success: false, error };
@@ -222,12 +239,6 @@ export async function sendPasswordResetEmail(
   resetToken: string
 ) {
   try {
-    // Skip sending if Mailgun client wasn't initialized
-    if (!mg) {
-      console.warn('Email sending skipped - Mailgun API key is missing');
-      return { success: false, error: 'API key not configured' };
-    }
-    
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
 
     const emailHtml = `
@@ -242,18 +253,11 @@ export async function sendPasswordResetEmail(
         
         <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
         <p>This link is valid for 1 hour.</p>
-        <p>The Amazona Team</p>
+        <p>The ${SENDER_NAME} Team</p>
       </div>
     `;
 
-    const data = await mg.messages.create(MAILGUN_DOMAIN, {
-      from: SENDER_EMAIL,
-      to: email,
-      subject: 'Reset Your Password',
-      html: emailHtml
-    });
-
-    return { success: true, data };
+    return await sendMailgunEmail(email, 'Reset Your Password', emailHtml);
   } catch (error) {
     console.error('Failed to send password reset email:', error);
     return { success: false, error };
