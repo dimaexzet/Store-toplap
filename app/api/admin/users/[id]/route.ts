@@ -127,11 +127,12 @@ export async function PATCH(
       return new NextResponse('Forbidden', { status: 403 })
     }
     
-    const { name, email } = await req.json()
+    const { name, email, role } = await req.json()
     
     // Basic validation
     if ((!name || typeof name !== 'string' || name.trim() === '') && 
-        (!email || typeof email !== 'string' || email.trim() === '')) {
+        (!email || typeof email !== 'string' || email.trim() === '') &&
+        (!role)) {
       return new NextResponse('Invalid request data', { status: 400 })
     }
     
@@ -139,6 +140,14 @@ export async function PATCH(
     const updateData: any = {}
     if (name) updateData.name = name
     if (email) updateData.email = email
+    
+    // Only admins can update role
+    if (role && session.user.role === 'ADMIN') {
+      if (role !== 'USER' && role !== 'ADMIN') {
+        return new NextResponse('Invalid role', { status: 400 })
+      }
+      updateData.role = role
+    }
     
     // Update user
     const updatedUser = await prisma.user.update({
