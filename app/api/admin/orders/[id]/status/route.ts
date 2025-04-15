@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { auth } from '@/auth'
 import { OrderStatus } from '@prisma/client'
-import { sendShippingUpdateEmail } from '@/lib/email'
+import { sendShippingUpdateEmail } from '@/lib/mailgun'
 
 type tParams = Promise<{ id: string }>
 
@@ -59,7 +59,7 @@ export async function PATCH(
     })
     
     // Send shipping update email if status is updated to SHIPPED
-    if (status === OrderStatus.SHIPPED && updatedOrder.user?.email && process.env.RESEND_API_KEY) {
+    if (status === OrderStatus.SHIPPED && updatedOrder.user?.email && process.env.MAILGUN_API_KEY) {
       try {
         await sendShippingUpdateEmail(
           updatedOrder.user.email,
@@ -72,9 +72,9 @@ export async function PATCH(
         console.error('Failed to send shipping update email:', emailError)
         // Continue with the order update even if email fails
       }
-    } else if (status === OrderStatus.SHIPPED && !process.env.RESEND_API_KEY) {
+    } else if (status === OrderStatus.SHIPPED && !process.env.MAILGUN_API_KEY) {
       // Log that email sending was skipped due to missing API key
-      console.warn('Shipping update email not sent - Resend API key is missing')
+      console.warn('Shipping update email not sent - Mailgun API key is missing')
     }
     
     return NextResponse.json(updatedOrder)
