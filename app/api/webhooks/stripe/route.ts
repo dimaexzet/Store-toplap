@@ -19,9 +19,9 @@ export const config = {
 export async function POST(req: Request) {
   try {
     const body = await req.text()
-    // В Next.js 14 headers() возвращает объект, а не Promise
-    const headerList = headers()
-    const signature = headerList.get('stripe-signature') || ''
+    
+    // Получаем заголовок stripe-signature
+    const signature = req.headers.get('stripe-signature') || ''
 
     // Используем заглушку для тестирования, если настоящие ключи отсутствуют
     let event
