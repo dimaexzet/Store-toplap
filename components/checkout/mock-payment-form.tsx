@@ -102,31 +102,43 @@ export function MockPaymentForm({ orderId }: MockPaymentFormProps) {
     }
 
     try {
+      console.log('Начало обработки платежа', { orderId })
+      
       // Имитация API запроса
       await new Promise(resolve => setTimeout(resolve, 1500))
 
+      const paymentData = {
+        orderId,
+        paymentDetails: {
+          lastFourDigits: cardNumber.replace(/\s/g, '').slice(-4),
+        }
+      }
+      
+      console.log('Отправка данных платежа:', paymentData)
+      
       // Обновление статуса заказа через заглушку API
       const response = await fetch(`/api/mock-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          orderId,
-          paymentDetails: {
-            lastFourDigits: cardNumber.replace(/\s/g, '').slice(-4),
-          }
-        }),
+        body: JSON.stringify(paymentData),
       })
 
+      console.log('Получен ответ от API', { status: response.status })
+      
       if (!response.ok) {
-        throw new Error('Ошибка при обработке платежа')
+        const errorText = await response.text()
+        console.error('Ошибка ответа API:', { status: response.status, body: errorText })
+        throw new Error(`Ошибка при обработке платежа: ${errorText}`)
       }
 
       const data = await response.json()
+      console.log('Получены данные от API', data)
 
       // Отправка уведомления о новом заказе через сокет
       if (data.order) {
+        console.log('Отправка уведомления о новом заказе')
         emitNewOrder(data.order)
       }
 
@@ -136,6 +148,7 @@ export function MockPaymentForm({ orderId }: MockPaymentFormProps) {
       })
 
       // Перенаправление на страницу подтверждения заказа
+      console.log('Перенаправление на страницу подтверждения заказа', `/order-confirmation/${orderId}`)
       router.push(`/order-confirmation/${orderId}`)
     } catch (error) {
       console.error('[PAYMENT_ERROR]', error)
