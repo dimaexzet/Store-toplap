@@ -7,10 +7,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function EmailTestPage() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [emailType, setEmailType] = useState('test')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -28,6 +36,9 @@ export default function EmailTestPage() {
     setResult(null)
 
     try {
+      // Создаем тестовый ID заказа если необходим
+      const testOrderId = emailType !== 'test' ? `test-${Date.now()}` : undefined
+
       const response = await fetch('/api/test/email', {
         method: 'POST',
         headers: {
@@ -36,7 +47,8 @@ export default function EmailTestPage() {
         body: JSON.stringify({
           email,
           name,
-          type: 'test', // Тип тестового письма
+          type: emailType,
+          orderId: testOrderId
         }),
       })
 
@@ -69,13 +81,13 @@ export default function EmailTestPage() {
       
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Mailgun Email Test</CardTitle>
+          <CardTitle>SMTP Email Test</CardTitle>
           <CardDescription>
-            Test the email service integration with Mailgun
+            Test the email service integration with SMTP
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 Recipient Email
@@ -101,6 +113,25 @@ export default function EmailTestPage() {
                 onChange={(e) => setName(e.target.value)}
                 disabled={isLoading}
               />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="emailType" className="text-sm font-medium">
+                Email Type
+              </label>
+              <Select 
+                defaultValue="test" 
+                onValueChange={setEmailType}
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select email type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="test">Test Email</SelectItem>
+                  <SelectItem value="order">Order Confirmation</SelectItem>
+                  <SelectItem value="shipping">Shipping Update</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

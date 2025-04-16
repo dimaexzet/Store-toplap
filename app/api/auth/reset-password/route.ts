@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import crypto from 'crypto';
 import { z } from 'zod';
-import { sendPasswordResetEmail } from '@/lib/mailgun';
+import { sendPasswordResetEmail } from '@/lib/smtp';
 
 // Define validation schema
 const resetSchema = z.object({
