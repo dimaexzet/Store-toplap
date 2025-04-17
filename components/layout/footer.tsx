@@ -155,13 +155,35 @@ export function Footer() {
             
             {/* Share Buttons */}
             <h3 className='font-semibold mb-2'>Share This Site</h3>
-            <div className="sharethis-inline-share-buttons" data-url="https://toplap.store" data-title="Toplap Store - Магазин инновационной электроники"></div>
-            
-            {/* ShareThis Script */}
-            <Script
-              src="https://platform-api.sharethis.com/js/sharethis.js#property=YOUR_PROPERTY_ID&product=inline-share-buttons"
-              strategy="lazyOnload"
-            />
+            <div className="flex space-x-3 mt-2">
+              <a 
+                href="https://www.facebook.com/sharer/sharer.php?u=https://toplap.store" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700"
+                aria-label="Share on Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </a>
+              <a 
+                href="https://twitter.com/intent/tweet?url=https://toplap.store&text=Toplap Store - Магазин инновационной электроники" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center bg-sky-500 text-white p-2 rounded-full hover:bg-sky-600"
+                aria-label="Share on Twitter"
+              >
+                <Twitter className="h-4 w-4" />
+              </a>
+              <a 
+                href="https://www.linkedin.com/sharing/share-offsite/?url=https://toplap.store" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center bg-blue-700 text-white p-2 rounded-full hover:bg-blue-800"
+                aria-label="Share on LinkedIn"
+              >
+                <Linkedin className="h-4 w-4" />
+              </a>
+            </div>
           </div>
         </div>
 
