@@ -8,6 +8,10 @@ declare module 'next-auth' {
 
 export default {
   providers: [],
+  // Явные настройки JWT для предотвращения ошибок
+  jwt: {
+    maxAge: 60 * 60 * 24 * 30, // 30 дней
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -30,8 +34,21 @@ export default {
       return session
     },
   },
+  // Настройки безопасности для cookie
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+    signIn: '/sign-in',
+    signOut: '/',
+    error: '/sign-in',
   },
 } satisfies NextAuthConfig

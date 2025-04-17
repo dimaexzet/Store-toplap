@@ -4,6 +4,7 @@ import authConfig from './auth.config'
 import bcrypt from 'bcryptjs'
 import Credentials from 'next-auth/providers/credentials'
 import { User } from '@prisma/client'
+import { verifyPassword } from '@/lib/password'
 
 // Set the number of salt rounds for bcrypt
 const BCRYPT_SALT_ROUNDS = 12
@@ -18,9 +19,16 @@ declare module 'next-auth' {
   }
 }
 
+// Проверяем наличие AUTH_SECRET
+if (!process.env.AUTH_SECRET) {
+  throw new Error("AUTH_SECRET is not defined. Please define it in your .env file");
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   basePath: '/api/auth',
   session: { strategy: 'jwt' },
+  // Явно указываем секрет для JWT
+  secret: process.env.AUTH_SECRET,
   ...authConfig,
   pages: {
     // signIn: '/auth/signin',
@@ -50,7 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null
           }
 
-          const isPasswordValid = await bcrypt.compare(password, user.password)
+          const isPasswordValid = await verifyPassword(password, user.password)
 
           if (!isPasswordValid) {
             // Add a small delay to prevent timing attacks
