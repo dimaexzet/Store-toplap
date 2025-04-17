@@ -6,6 +6,9 @@ import { getRevenueData, getOrderStats, getRecentOrders } from '@/lib/analytics'
 import RealTimeNotifications from '@/components/admin/RealTimeNotifications'
 import { Suspense } from 'react'
 
+// Предотвращаем статическую генерацию для страницы админ-панели
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboardPage() {
   const [revenueData, orderStats, recentOrders] = await Promise.all([
     getRevenueData(),
