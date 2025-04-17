@@ -6,15 +6,15 @@ const nextConfig: NextConfig = {
     domains: ["utfs.io"],
   },
   experimental: {
-    serverComponentsExternalPackages: [
-      "@prisma/client", 
-      "decimal.js", 
-      "@prisma/client/runtime"
-    ],
     serverActions: {
       bodySizeLimit: '2mb',
     },
   },
+  serverExternalPackages: [
+    "@prisma/client", 
+    "decimal.js", 
+    "@prisma/client/runtime"
+  ],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = [...(config.externals || []), 'decimal.js'];

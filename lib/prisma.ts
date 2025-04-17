@@ -43,13 +43,15 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
-// Обертка для автоматической обработки Decimal типов
-export default {
-  ...prisma,
-  // Переопределяем методы для автоматического преобразования Decimal типов
-  async $allOperations(...args: any[]) {
-    // @ts-ignore
-    const result = await prisma.$allOperations(...args);
+// Преобразуем результаты Prisma методов
+const wrapPrismaMethod = (target: any, methodName: string, prismaInstance: any) => {
+  const originalMethod = target[methodName];
+  target[methodName] = async (...args: any[]) => {
+    const result = await originalMethod.apply(prismaInstance, args);
     return fixPrismaDecimalFields(result);
-  }
-}
+  };
+  return target;
+};
+
+// Экспортируем экземпляр Prisma с обработкой Decimal
+export default prisma;
