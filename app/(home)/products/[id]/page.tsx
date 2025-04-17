@@ -10,8 +10,11 @@ import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { ProductStructuredData } from '@/components/products/product-structured-data'
 import { format } from 'date-fns'
 
+// Возвращаем тип Promise для совместимости с Next.js 15
+type tParams = Promise<{ id: string }>
+
 interface ProductPageProps {
-  params: { id: string }
+  params: tParams
 }
 
 async function getProduct(id: string) {
@@ -42,7 +45,7 @@ async function getProduct(id: string) {
 
 // Generate metadata for the product page
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { id } = params
+  const { id } = await params
   const product = await getProduct(id)
   
   const averageRating = product.reviews.length
@@ -93,8 +96,8 @@ export async function generateStaticParams() {
 // Set revalidation time - product pages will be regenerated at most once every 60 minutes
 export const revalidate = 3600
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = params
+export default async function ProductPage(props: ProductPageProps) {
+  const { id } = await props.params
   const product = await getProduct(id)
   
   const averageRating = product.reviews.length
