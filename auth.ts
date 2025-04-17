@@ -6,9 +6,8 @@ import Credentials from 'next-auth/providers/credentials'
 import { User } from '@prisma/client'
 import { verifyPassword } from '@/lib/password'
 
-// Set the number of salt rounds for bcrypt
-const BCRYPT_SALT_ROUNDS = 12
-const prisma = new PrismaClient()
+// Используем существующий Prisma клиент с обработкой Decimal
+import prisma from '@/lib/prisma'
 
 declare module 'next-auth' {
   interface Session {
@@ -26,13 +25,16 @@ if (!process.env.AUTH_SECRET) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   basePath: '/api/auth',
-  session: { strategy: 'jwt' },
-  // Явно указываем секрет для JWT
+  session: { 
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 дней
+  },
   secret: process.env.AUTH_SECRET,
-  ...authConfig,
+  debug: process.env.NODE_ENV === 'development',
   pages: {
-    // signIn: '/auth/signin',
-    // error: '/auth/error',
+    signIn: '/sign-in',
+    signOut: '/',
+    error: '/sign-in', 
   },
   providers: [
     Credentials({
@@ -89,11 +91,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role as 'USER' | 'ADMIN'
+      if (token && session.user) {
         session.user.id = token.id as string
+        session.user.email = token.email as string
+        session.user.name = token.name as string
+        session.user.image = token.image as string | null 
+        session.user.role = token.role as 'USER' | 'ADMIN'
       }
       return session
     },
   },
+  // Не включаем конфигурацию из auth.config.ts для избежания дубликатов и конфликтов
+  // ...authConfig,
 })
