@@ -1,86 +1,74 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
-import { auth } from '@/auth'
-import { SessionProvider } from '@/components/providers/session-provider'
+import { Metadata } from 'next'
+import { Toaster } from '@/components/ui/toaster'
+import { GeistSans, GeistMono } from 'geist/font'
 import { CartProvider } from '@/components/providers/cart-provider'
 import Script from 'next/script'
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-})
+import { auth } from '@/auth'
+import { SessionProvider } from '@/components/providers/session-provider'
+import { Inter } from 'next/font/google'
+import React from 'react'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Toplap Store | Магазин инновационной электроники',
-    template: '%s | Toplap Store'
+    default: 'AI Amazona - Интернет-магазин электроники и гаджетов',
+    template: '%s | AI Amazona'
   },
-  description: 'Широкий выбор электроники, гаджетов и аксессуаров с доставкой по всему миру. Лучшие цены и отличное обслуживание.',
-  keywords: ['электроника', 'гаджеты', 'ноутбуки', 'смартфоны', 'аксессуары', 'интернет-магазин', 'онлайн-покупки'],
-  authors: [{ name: 'Toplap Team' }],
-  creator: 'Toplap Store',
-  publisher: 'Toplap Store',
+  description: 'Широкий выбор современной электроники, гаджетов, компьютеров и аксессуаров. Доставка по всей России. Официальная гарантия.',
+  keywords: ['электроника', 'компьютеры', 'гаджеты', 'смартфоны', 'аксессуары', 'интернет-магазин'],
+  authors: [{ name: 'AI Amazona Team' }],
+  creator: 'AI Amazona Team',
+  publisher: 'AI Amazona',
+  robots: 'index, follow',
+  openGraph: {
+    type: 'website',
+    locale: 'ru_RU',
+    url: 'https://toplap.store',
+    title: 'AI Amazona - Интернет-магазин электроники и гаджетов',
+    description: 'Широкий выбор современной электроники, гаджетов, компьютеров и аксессуаров. Доставка по всей России. Официальная гарантия.',
+    siteName: 'AI Amazona',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AI Amazona - Интернет-магазин электроники и гаджетов',
+    description: 'Широкий выбор современной электроники, гаджетов, компьютеров и аксессуаров. Доставка по всей России. Официальная гарантия.',
+  },
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-      'max-video-preview': -1,
-      'max-snippet': -1,
-    },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
   },
-  openGraph: {
-    title: 'Toplap Store | Магазин инновационной электроники',
-    description: 'Широкий выбор электроники, гаджетов и аксессуаров с доставкой по всему миру',
-    url: 'https://toplap.store',
-    siteName: 'Toplap Store',
-    locale: 'ru_RU',
-    type: 'website',
-    images: [
-      {
-        url: 'https://toplap.store/images/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Toplap Store - Магазин электроники',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Toplap Store | Магазин инновационной электроники',
-    description: 'Широкий выбор электроники, гаджетов и аксессуаров с доставкой по всему миру',
-    images: ['https://toplap.store/images/og-image.jpg'],
+  verification: {
+    google: 'googleVerificationCode',
+    yandex: 'yandexVerificationCode',
   },
   icons: {
     icon: [
       { url: '/favicon.ico' },
-      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon.png', type: 'image/png' },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      {
+        rel: 'mask-icon',
+        url: '/safari-pinned-tab.svg',
+      },
     ],
   },
-  manifest: '/manifest.json',
-  metadataBase: new URL('https://toplap.store'),
+  manifest: '/site.webmanifest',
   alternates: {
     canonical: 'https://toplap.store',
     languages: {
-      'ru': 'https://toplap.store',
-      'en': 'https://toplap.store/en',
+      'ru-RU': 'https://toplap.store',
+      'en-US': 'https://toplap.store/en',
     },
   },
 }
@@ -150,7 +138,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
         <SessionProvider session={session}>
           <CartProvider>
