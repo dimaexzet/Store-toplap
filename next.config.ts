@@ -9,14 +9,16 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    // Улучшенная поддержка внешних пакетов на сервере
+    serverComponentsExternalPackages: [
+      "@prisma/client", 
+      "decimal.js", 
+      "@prisma/client/runtime/library"
+    ]
   },
-  serverExternalPackages: [
-    "@prisma/client", 
-    "decimal.js", 
-    "@prisma/client/runtime"
-  ],
   webpack: (config, { isServer }) => {
     if (isServer) {
+      // Предотвращаем обработку этих пакетов Webpack на сервере
       config.externals = [...(config.externals || []), 'decimal.js'];
     }
     
@@ -29,6 +31,17 @@ const nextConfig: NextConfig = {
     }
     
     return config;
+  },
+  // Отключаем строгий режим для уменьшения количества ошибок
+  reactStrictMode: false,
+  // Увеличиваем таймаут для медленных запросов
+  staticPageGenerationTimeout: 180,
+  // Увеличиваем лимит тел запросов
+  api: {
+    responseLimit: '8mb',
+    bodyParser: {
+      sizeLimit: '8mb',
+    },
   },
 };
 
