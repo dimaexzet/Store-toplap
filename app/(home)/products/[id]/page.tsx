@@ -5,10 +5,7 @@ import { ProductGallery } from '@/components/products/product-gallery'
 import { ProductInfo } from '@/components/products/product-info'
 import { ProductReviews } from '@/components/products/product-reviews'
 import { ProductRelated } from '@/components/products/product-related'
-import { ProductFAQ } from '@/components/products/product-faq'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
-import { ProductStructuredData } from '@/components/products/product-structured-data'
-import { format } from 'date-fns'
 
 // Возвращаем тип Promise для совместимости с Next.js 15
 type tParams = Promise<{ id: string }>
@@ -103,23 +100,6 @@ export default async function ProductPage(props: ProductPageProps) {
   const averageRating = product.reviews.length
     ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
     : 0
-    
-  const formattedRating = averageRating.toFixed(1)
-  const reviewCount = product.reviews.length
-  
-  // Prepare data for structured data component
-  const structuredData = {
-    productId: product.id,
-    name: product.name,
-    description: product.description,
-    images: product.images,
-    price: product.price,
-    stock: product.stock,
-    categoryName: product.category.name,
-    categoryId: product.category.id,
-    reviewCount: reviewCount,
-    ratingValue: formattedRating
-  }
 
   return (
     <>
@@ -145,20 +125,6 @@ export default async function ProductPage(props: ProductPageProps) {
         <div className='mb-16'>
           <ProductReviews productId={product.id} reviews={product.reviews} />
         </div>
-        
-        {/* FAQ Section */}
-        <div className='mb-16'>
-          <ProductFAQ 
-            productName={product.name}
-            productId={product.id}
-            customFAQs={[
-              {
-                question: `Какие характеристики у ${product.name}?`,
-                answer: `${product.name} имеет современный дизайн и высокое качество сборки. ${product.description}`
-              }
-            ]}
-          />
-        </div>
 
         {/* Related Products */}
         <div>
@@ -168,9 +134,6 @@ export default async function ProductPage(props: ProductPageProps) {
           />
         </div>
       </div>
-      
-      {/* Product structured data moved to a client component */}
-      <ProductStructuredData data={structuredData} />
     </>
   )
 }
