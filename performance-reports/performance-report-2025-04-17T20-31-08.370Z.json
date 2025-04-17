@@ -1,0 +1,165 @@
+{
+  "timestamp": "2025-04-17T20:33:38.471Z",
+  "baseUrl": "http://localhost:3000",
+  "thresholds": {
+    "latency": {
+      "p99": 1500,
+      "max": 2000
+    },
+    "requests": {
+      "average": 500
+    }
+  },
+  "results": {
+    "Homepage": {
+      "url": "http://localhost:3000/",
+      "method": "GET",
+      "requests": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "total": 0,
+        "sent": 293862
+      },
+      "latency": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "average": 0,
+        "min": 0,
+        "max": 0
+      },
+      "errors": 293762,
+      "timeouts": 0,
+      "success": true
+    },
+    "Products Listing": {
+      "url": "http://localhost:3000/products",
+      "method": "GET",
+      "requests": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "total": 0,
+        "sent": 293569
+      },
+      "latency": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "average": 0,
+        "min": 0,
+        "max": 0
+      },
+      "errors": 293469,
+      "timeouts": 0,
+      "success": true
+    },
+    "Product Detail": {
+      "url": "http://localhost:3000/products/1",
+      "method": "GET",
+      "requests": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "total": 0,
+        "sent": 292598
+      },
+      "latency": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "average": 0,
+        "min": 0,
+        "max": 0
+      },
+      "errors": 292548,
+      "timeouts": 0,
+      "success": true
+    },
+    "Search Functionality": {
+      "url": "http://localhost:3000/api/products?search=shirt",
+      "method": "GET",
+      "requests": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "total": 0,
+        "sent": 292266
+      },
+      "latency": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "average": 0,
+        "min": 0,
+        "max": 0
+      },
+      "errors": 292216,
+      "timeouts": 0,
+      "success": true
+    },
+    "Cart Operations": {
+      "url": "http://localhost:3000/api/cart",
+      "method": "POST",
+      "requests": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "total": 0,
+        "sent": 190702
+      },
+      "latency": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "average": 0,
+        "min": 0,
+        "max": 0
+      },
+      "errors": 190682,
+      "timeouts": 0,
+      "success": true
+    },
+    "Authentication - Login": {
+      "url": "http://localhost:3000/api/auth/callback/credentials",
+      "method": "POST",
+      "requests": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "total": 0,
+        "sent": 97088
+      },
+      "latency": {
+        "average": 0,
+        "min": 0,
+        "max": 0,
+        "p99": 0
+      },
+      "throughput": {
+        "average": 0,
+        "min": 0,
+        "max": 0
+      },
+      "errors": 97078,
+      "timeouts": 0,
+      "success": true
+    }
+  }
+}

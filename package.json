@@ -11,7 +11,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:api": "jest --testPathPattern=__tests__/api",
+    "test:e2e": "jest --testPathPattern=__tests__/e2e",
+    "test:component": "jest --testPathPattern=__tests__/components",
+    "test:all": "node scripts/run-all-tests.js",
     "security-audit": "node scripts/security-audit.js",
+    "performance-test": "node scripts/performance-test.js",
     "vercel-build": "npm install --legacy-peer-deps --include=dev && prisma generate && next build --no-lint"
   },
   "dependencies": {
@@ -48,6 +53,7 @@
     "crypto": "^1.0.1",
     "csrf": "^3.1.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.5.2",
     "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
@@ -88,6 +94,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autocannon": "^7.15.0",
     "babel-jest": "^29.7.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
