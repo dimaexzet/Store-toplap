@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Facebook, Instagram, Twitter, Youtube, Linkedin, Share2, Github } from 'lucide-react'
 import Script from 'next/script'

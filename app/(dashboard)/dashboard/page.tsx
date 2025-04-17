@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import prisma from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PackageSearch, MapPin, Heart } from 'lucide-react'
+import { format } from 'date-fns'
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -107,7 +108,7 @@ export default async function DashboardPage() {
                     <div>
                       <p className='font-medium'>Order #{order.id.slice(-8)}</p>
                       <p className='text-sm text-muted-foreground'>
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {format(new Date(order.createdAt), 'MMM d, yyyy')}
                       </p>
                     </div>
                     <div className='text-right'>
