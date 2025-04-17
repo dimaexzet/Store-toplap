@@ -1,13 +1,15 @@
 import './globals.css'
 import { Metadata } from 'next'
 import { Toaster } from '@/components/ui/toaster'
-import { GeistSans, GeistMono } from 'geist/font'
+import { Inter } from 'next/font/google'
 import { CartProvider } from '@/components/providers/cart-provider'
 import Script from 'next/script'
 import { auth } from '@/auth'
 import { SessionProvider } from '@/components/providers/session-provider'
-import { Inter } from 'next/font/google'
 import React from 'react'
+
+// Инициализируем шрифт Inter
+const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
   title: {
@@ -138,7 +140,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
+        className={`${inter.variable} font-sans antialiased`}
       >
         <SessionProvider session={session}>
           <CartProvider>
