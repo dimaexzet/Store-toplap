@@ -76,6 +76,13 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   metadataBase: new URL('https://toplap.store'),
+  alternates: {
+    canonical: 'https://toplap.store',
+    languages: {
+      'ru': 'https://toplap.store',
+      'en': 'https://toplap.store/en',
+    },
+  },
 }
 
 export default async function RootLayout({
@@ -90,10 +97,11 @@ export default async function RootLayout({
       <head>
         <link rel="canonical" href="https://toplap.store" />
         
-        {/* Структурированные данные для организации */}
+        {/* Structured data scripts are now moved to the next/script component with lazyOnload strategy */}
         <Script 
           id="structured-data-organization"
           type="application/ld+json"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
@@ -122,10 +130,10 @@ export default async function RootLayout({
           }}
         />
         
-        {/* Структурированные данные для WebSite */}
         <Script 
           id="structured-data-website"
           type="application/ld+json"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
