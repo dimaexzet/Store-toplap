@@ -7,7 +7,7 @@ import { ProductReviews } from '@/components/products/product-reviews'
 import { ProductRelated } from '@/components/products/product-related'
 import { ProductFAQ } from '@/components/products/product-faq'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
-import Script from 'next/script'
+import { ProductStructuredData } from '@/components/products/product-structured-data'
 
 type tParams = Promise<{ id: string }>
 
@@ -104,6 +104,20 @@ export default async function ProductPage(props: ProductPageProps) {
     
   const formattedRating = averageRating.toFixed(1)
   const reviewCount = product.reviews.length
+  
+  // Prepare data for structured data component
+  const structuredData = {
+    productId: product.id,
+    name: product.name,
+    description: product.description,
+    images: product.images,
+    price: product.price,
+    stock: product.stock,
+    categoryName: product.category.name,
+    categoryId: product.category.id,
+    reviewCount: reviewCount,
+    ratingValue: formattedRating
+  }
 
   return (
     <>
@@ -153,82 +167,8 @@ export default async function ProductPage(props: ProductPageProps) {
         </div>
       </div>
       
-      {/* Product structured data */}
-      <Script
-        id="product-structured-data"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            "name": product.name,
-            "description": product.description,
-            "image": product.images,
-            "sku": product.id,
-            "mpn": product.id,
-            "brand": {
-              "@type": "Brand",
-              "name": "Toplap Store"
-            },
-            "offers": {
-              "@type": "Offer",
-              "url": `https://toplap.store/products/${product.id}`,
-              "priceCurrency": "EUR",
-              "price": product.price,
-              "priceValidUntil": new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-              "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-              "seller": {
-                "@type": "Organization",
-                "name": "Toplap Store"
-              }
-            },
-            "aggregateRating": product.reviews.length > 0 ? {
-              "@type": "AggregateRating",
-              "ratingValue": formattedRating,
-              "reviewCount": reviewCount
-            } : undefined,
-            "category": product.category.name
-          })
-        }}
-      />
-      
-      {/* BreadcrumbList structured data */}
-      <Script
-        id="breadcrumb-structured-data"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Главная",
-                "item": "https://toplap.store"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "Товары",
-                "item": "https://toplap.store/products"
-              },
-              {
-                "@type": "ListItem",
-                "position": 3,
-                "name": product.category.name,
-                "item": `https://toplap.store/categories/${product.category.id}`
-              },
-              {
-                "@type": "ListItem",
-                "position": 4,
-                "name": product.name,
-                "item": `https://toplap.store/products/${product.id}`
-              }
-            ]
-          })
-        }}
-      />
+      {/* Product structured data moved to a client component */}
+      <ProductStructuredData data={structuredData} />
     </>
   )
 }
