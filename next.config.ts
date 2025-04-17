@@ -6,7 +6,29 @@ const nextConfig: NextConfig = {
     domains: ["utfs.io"],
   },
   experimental: {
-    serverComponentsExternalPackages: ["@prisma/client"],
+    serverComponentsExternalPackages: [
+      "@prisma/client", 
+      "decimal.js", 
+      "@prisma/client/runtime"
+    ],
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'decimal.js'];
+    }
+    
+    // Предотвращаем ошибку с десериализацией Decimal
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'decimal.js': false,
+      };
+    }
+    
+    return config;
   },
 };
 
