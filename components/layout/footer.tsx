@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Facebook, Instagram, Twitter } from 'lucide-react'
+import { Facebook, Instagram, Twitter, Youtube, Linkedin, Share2, Github } from 'lucide-react'
+import Script from 'next/script'
 
 export function Footer() {
   return (
@@ -102,39 +103,75 @@ export function Footer() {
           {/* Social Media */}
           <div>
             <h3 className='font-semibold mb-4'>Connect With Us</h3>
-            <div className='flex space-x-4'>
+            <div className='flex space-x-4 mb-6'>
               <a
-                href='https://facebook.com'
+                href='https://facebook.com/toplap'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-gray-600 hover:text-gray-900'
+                className='text-gray-600 hover:text-blue-600 transition-colors'
+                aria-label="Follow us on Facebook"
               >
                 <Facebook className='h-6 w-6' />
               </a>
               <a
-                href='https://twitter.com'
+                href='https://twitter.com/toplap'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-gray-600 hover:text-gray-900'
+                className='text-gray-600 hover:text-blue-400 transition-colors'
+                aria-label="Follow us on Twitter"
               >
                 <Twitter className='h-6 w-6' />
               </a>
               <a
-                href='https://instagram.com'
+                href='https://instagram.com/toplap'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-gray-600 hover:text-gray-900'
+                className='text-gray-600 hover:text-pink-600 transition-colors'
+                aria-label="Follow us on Instagram"
               >
                 <Instagram className='h-6 w-6' />
               </a>
+              <a
+                href='https://github.com/dimaexzet/Store-toplap'
+                target='_blank'
+                rel='noopener noreferrer'
+                className='text-gray-600 hover:text-gray-900 transition-colors'
+                aria-label="View our GitHub repository"
+              >
+                <Github className='h-6 w-6' />
+              </a>
+              <a
+                href='https://youtube.com/toplap'
+                target='_blank'
+                rel='noopener noreferrer'
+                className='text-gray-600 hover:text-red-600 transition-colors'
+                aria-label="Subscribe to our YouTube channel"
+              >
+                <Youtube className='h-6 w-6' />
+              </a>
             </div>
+            
+            {/* Share Buttons */}
+            <h3 className='font-semibold mb-2'>Share This Site</h3>
+            <div className="sharethis-inline-share-buttons" data-url="https://toplap.store" data-title="Toplap Store - Магазин инновационной электроники"></div>
+            
+            {/* ShareThis Script */}
+            <Script
+              src="https://platform-api.sharethis.com/js/sharethis.js#property=YOUR_PROPERTY_ID&product=inline-share-buttons"
+              strategy="lazyOnload"
+            />
           </div>
         </div>
 
         <div className='mt-8 pt-8 border-t border-gray-200'>
           <p className='text-center text-gray-500'>
-            © {new Date().getFullYear()} AI Amazona. All rights reserved.
+            © {new Date().getFullYear()} Toplap Store. All rights reserved.
           </p>
+          <div className="flex justify-center mt-4 space-x-4 text-sm text-gray-500">
+            <Link href="/terms" className="hover:text-gray-900">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-gray-900">Privacy Policy</Link>
+            <Link href="/sitemap.xml" className="hover:text-gray-900">Sitemap</Link>
+          </div>
         </div>
       </div>
     </footer>

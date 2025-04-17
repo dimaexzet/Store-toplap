@@ -5,6 +5,9 @@ const SENDER_NAME = process.env.SENDER_NAME || 'Toplap';
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'info@toplap.store';
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'sandbox10c96c42fded4deaa2c239a8c091d20b.mailgun.org';
 const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
+// const MAILGUN_TESTMODE = process.env.MAILGUN_TESTMODE === 'true';
+// Временно отключим тестовый режим, пока не разберемся с проблемой
+const MAILGUN_TESTMODE = false;
 
 /**
  * Базовый метод для отправки почты через Mailgun API напрямую
@@ -13,6 +16,24 @@ async function sendMailgunEmail(to: string, subject: string, html: string) {
   if (!MAILGUN_API_KEY) {
     console.warn('Email sending skipped - Mailgun API key is missing');
     return { success: false, error: 'API key not configured' };
+  }
+
+  // If in test mode, log email details instead of actually sending
+  if (MAILGUN_TESTMODE) {
+    console.log('------------- TEST MODE EMAIL -------------');
+    console.log(`From: ${SENDER_NAME} <${SENDER_EMAIL}>`);
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log('HTML content available but not shown');
+    console.log('------------------------------------------');
+    
+    return { 
+      success: true, 
+      data: { 
+        id: `test-email-${Date.now()}`,
+        message: 'Email logged in test mode (not actually sent)' 
+      } 
+    };
   }
 
   try {

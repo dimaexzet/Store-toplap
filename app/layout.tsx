@@ -5,6 +5,7 @@ import './globals.css'
 import { auth } from '@/auth'
 import { SessionProvider } from '@/components/providers/session-provider'
 import { CartProvider } from '@/components/providers/cart-provider'
+import Script from 'next/script'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -88,6 +89,57 @@ export default async function RootLayout({
     <html lang='ru'>
       <head>
         <link rel="canonical" href="https://toplap.store" />
+        
+        {/* Структурированные данные для организации */}
+        <Script 
+          id="structured-data-organization"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Toplap Store",
+              "url": "https://toplap.store",
+              "logo": "https://toplap.store/images/logo.png",
+              "description": "Интернет-магазин инновационной электроники с широким ассортиментом гаджетов и аксессуаров",
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "Россия"
+              },
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+7-XXX-XXX-XXXX",
+                "contactType": "customer service",
+                "availableLanguage": ["Russian", "English"]
+              },
+              "sameAs": [
+                "https://facebook.com/toplap",
+                "https://instagram.com/toplap",
+                "https://twitter.com/toplap",
+                "https://vk.com/toplap"
+              ]
+            })
+          }}
+        />
+        
+        {/* Структурированные данные для WebSite */}
+        <Script 
+          id="structured-data-website"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Toplap Store",
+              "url": "https://toplap.store",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://toplap.store/search?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

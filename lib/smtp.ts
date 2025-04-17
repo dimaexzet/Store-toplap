@@ -8,6 +8,9 @@ const SMTP_USER = process.env.SMTP_USER || 'postmaster@sandbox10c96c42fded4deaa2
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD || '';
 const SENDER_NAME = process.env.SENDER_NAME || 'Toplap';
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'mail@toplap.store';
+// const MAILGUN_TESTMODE = process.env.MAILGUN_TESTMODE === 'true';
+// Временно отключим тестовый режим, пока не разберемся с проблемой
+const MAILGUN_TESTMODE = false;
 
 // Создаем транспорт Nodemailer
 const transporter = nodemailer.createTransport({
@@ -27,6 +30,24 @@ export async function sendEmail(to: string, subject: string, html: string) {
   if (!SMTP_PASSWORD) {
     console.warn('Email sending skipped - SMTP password is missing');
     return { success: false, error: 'SMTP password not configured' };
+  }
+
+  // If in test mode, log email details instead of actually sending
+  if (MAILGUN_TESTMODE) {
+    console.log('------------- TEST MODE EMAIL (SMTP) -------------');
+    console.log(`From: ${SENDER_NAME} <${SENDER_EMAIL}>`);
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log('HTML content available but not shown');
+    console.log('------------------------------------------');
+    
+    return { 
+      success: true, 
+      data: { 
+        messageId: `test-email-${Date.now()}@smtp.test`,
+        message: 'Email logged in test mode (not actually sent)' 
+      } 
+    };
   }
 
   try {

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { sendTestEmail, sendOrderConfirmationEmail, sendShippingUpdateEmail } from '@/lib/smtp'
 
+// Environment variables
+const MAILGUN_TESTMODE = process.env.MAILGUN_TESTMODE === 'true';
+
 // Валидация входящих данных
 const emailSchema = z.object({
   email: z.string().email(),
@@ -16,6 +19,9 @@ export async function POST(req: Request) {
     const { email, name, type, orderId } = emailSchema.parse(body)
 
     let result;
+
+    // Log test mode status
+    console.log(`Email test endpoint called. Test mode: ${MAILGUN_TESTMODE ? 'ON' : 'OFF'}`);
 
     switch (type) {
       case 'test':

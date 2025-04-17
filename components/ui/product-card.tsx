@@ -86,18 +86,32 @@ export function ProductCard({
     setSheetOpen(true)
   }
 
+  // Format price properly with currency symbol
+  const formattedPrice = new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2
+  }).format(Number(product.price))
+  
+  // Create a more descriptive alt text for the product image
+  const imageAltText = `${product.name} - ${product.description.substring(0, 50)}${product.description.length > 50 ? '...' : ''}`
+
   // Determine if we should show highlighted content
   const hasHighlightedName = showHighlights && product.nameHighlighted;
   const hasHighlightedDescription = showHighlights && product.descriptionHighlighted;
 
   return (
     <>
-      <Card className={cn('overflow-hidden group', className)}>
-        <Link href={`/products/${product.id}`}>
+      <Card className={cn('overflow-hidden group h-full flex flex-col', className)}>
+        <Link 
+          href={`/products/${product.id}`}
+          className="flex flex-col h-full"
+          aria-label={`Просмотреть товар: ${product.name}`}
+        >
           <div className='aspect-square overflow-hidden relative bg-gray-100 dark:bg-gray-800'>
             <Image
               src={imageUrl}
-              alt={product.name}
+              alt={imageAltText}
               fill
               sizes='(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
               className='object-cover transition-transform duration-300 group-hover:scale-105'
@@ -123,9 +137,9 @@ export function ProductCard({
               )}
             </CardDescription>
           </CardHeader>
-          <CardContent className='p-4 pt-0'>
+          <CardContent className='p-4 pt-0 flex-grow'>
             <div className='flex items-center gap-2'>
-              <div className='flex items-center'>
+              <div className='flex items-center' aria-label={`Рейтинг: ${averageRating.toFixed(1)} из 5`}>
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
@@ -135,21 +149,26 @@ export function ProductCard({
                         ? 'fill-yellow-400 text-yellow-400'
                         : 'fill-gray-200 text-gray-200'
                     )}
+                    aria-hidden="true"
                   />
                 ))}
               </div>
-              <span className='text-sm text-gray-600'>
+              <span className='text-sm text-gray-600' aria-label={`${product.reviews?.length || 0} отзывов`}>
                 ({product.reviews?.length || 0})
               </span>
             </div>
-            <div className='mt-2 text-xl font-bold'>
-              €{Number(product.price).toFixed(2)}
+            <div className='mt-2 text-xl font-bold' aria-label={`Цена: ${formattedPrice}`}>
+              {formattedPrice}
             </div>
           </CardContent>
         </Link>
-        <CardFooter className='p-4 pt-0'>
-          <Button className='w-full' onClick={handleAddToCart}>
-            Add to Cart
+        <CardFooter className='p-4 pt-0 mt-auto'>
+          <Button 
+            className='w-full' 
+            onClick={handleAddToCart}
+            aria-label={`Добавить ${product.name} в корзину`}
+          >
+            Добавить в корзину
           </Button>
         </CardFooter>
       </Card>

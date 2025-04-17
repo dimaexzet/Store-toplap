@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { 
   Select,
   SelectContent,
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function EmailTestPage() {
   const [email, setEmail] = useState('')
@@ -21,6 +22,25 @@ export default function EmailTestPage() {
   const [emailType, setEmailType] = useState('test')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
+  const [testMode, setTestMode] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    // Fetch environment info to check if test mode is enabled
+    const checkTestMode = async () => {
+      try {
+        const response = await fetch('/api/test/email-config')
+        if (response.ok) {
+          const data = await response.json()
+          setTestMode(data.testMode)
+        }
+      } catch (error) {
+        console.error('Error checking test mode:', error)
+        setTestMode(false)
+      }
+    }
+
+    checkTestMode()
+  }, [])
 
   const handleTestEmail = async () => {
     if (!email || !name) {
@@ -78,6 +98,17 @@ export default function EmailTestPage() {
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-6">Email Service Test</h1>
+      
+      {testMode !== null && (
+        <Alert className={`mb-6 ${testMode ? 'bg-yellow-50' : 'bg-blue-50'}`}>
+          <AlertCircle className={`h-4 w-4 ${testMode ? 'text-yellow-600' : 'text-blue-600'}`} />
+          <AlertDescription>
+            {testMode 
+              ? "Email test mode is ON. Emails will be logged but not actually sent. Set MAILGUN_TESTMODE=false in .env to disable test mode." 
+              : "Email test mode is OFF. Real emails will be sent to recipients. Set MAILGUN_TESTMODE=true in .env to enable test mode."}
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card className="mb-6">
         <CardHeader>
