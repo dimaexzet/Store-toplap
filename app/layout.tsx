@@ -1,5 +1,5 @@
 import './globals.css'
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import { Toaster } from '@/components/ui/toaster'
 import { Inter } from 'next/font/google'
 import { CartProvider } from '@/components/providers/cart-provider'
@@ -7,9 +7,19 @@ import Script from 'next/script'
 import { auth } from '@/auth'
 import { SessionProvider } from '@/components/providers/session-provider'
 import React from 'react'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Toaster as SonnerToaster } from 'sonner'
 
 // Инициализируем шрифт Inter
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter' })
+
+// Перемещаем настройки viewport в отдельный экспорт
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
 
 export const metadata: Metadata = {
   title: {
@@ -39,11 +49,6 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
   },
   verification: {
     google: 'googleVerificationCode',
@@ -145,7 +150,9 @@ export default async function RootLayout({
         <SessionProvider session={session}>
           <CartProvider>
             {children}
-            <Toaster />
+            <Analytics />
+            <SpeedInsights />
+            <SonnerToaster position="top-right" richColors closeButton />
           </CartProvider>
         </SessionProvider>
       </body>
