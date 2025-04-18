@@ -8,14 +8,14 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
-    },
-    // Улучшенная поддержка внешних пакетов на сервере
-    serverComponentsExternalPackages: [
-      "@prisma/client", 
-      "decimal.js", 
-      "@prisma/client/runtime/library"
-    ]
+    }
   },
+  // Правильное место для внешних пакетов сервера
+  serverExternalPackages: [
+    "@prisma/client", 
+    "decimal.js", 
+    "@prisma/client/runtime/library"
+  ],
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Предотвращаем обработку этих пакетов Webpack на сервере
@@ -36,13 +36,24 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   // Увеличиваем таймаут для медленных запросов
   staticPageGenerationTimeout: 180,
-  // Увеличиваем лимит тел запросов
-  api: {
-    responseLimit: '8mb',
-    bodyParser: {
-      sizeLimit: '8mb',
-    },
-  },
+  // Настройки ответов API
+  headers: async () => {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Transfer-Encoding',
+            value: 'chunked'
+          },
+          {
+            key: 'Content-Length',
+            value: '8000000'
+          }
+        ]
+      }
+    ]
+  }
 };
 
 export default nextConfig;
