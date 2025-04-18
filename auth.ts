@@ -28,6 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { 
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 дней
+    updateAge: 24 * 60 * 60, // 24 часа
   },
   secret: process.env.AUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
@@ -35,6 +36,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/sign-in',
     signOut: '/',
     error: '/sign-in', 
+  },
+  // Настройки JWT для решения проблемы с файлами сессии
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 дней
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
   providers: [
     Credentials({

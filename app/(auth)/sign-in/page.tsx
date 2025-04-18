@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn } from '@/auth'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,10 +30,11 @@ export default function SignInPage() {
         redirect: false,
         email,
         password,
+        callbackUrl,
       })
 
-      if (!result?.ok) {
-        throw new Error('Invalid email or password')
+      if (result?.error) {
+        throw new Error(result.error || 'Invalid email or password')
       }
 
       router.push(callbackUrl)
