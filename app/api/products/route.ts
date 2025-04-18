@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { calculateRelevanceScore, fuzzyMatch, highlightText } from '@/lib/search/utils'
+import { auth } from '@/auth'
 
 const ITEMS_PER_PAGE = 12
 const CACHE_MAX_AGE = 60 // Cache for 1 minute
@@ -322,5 +323,147 @@ async function trackSearchQuery(query: string) {
     // Log error but don't fail the search
     console.error('Failed to track search query:', error);
     throw error; // Rethrow to handle in the main function
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth()
+    
+    // Check authentication
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Check admin role
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    
+    // Parse request body
+    const body = await request.json()
+    
+    // Validate required fields
+    if (!body.name || !body.price || !body.categoryId) {
+      return NextResponse.json(
+        { error: 'Missing required fields for validation' },
+        { status: 400 }
+      )
+    }
+    
+    // Create product in database
+    const product = await prisma.product.create({
+      data: body
+    })
+    
+    return NextResponse.json(product, { status: 201 })
+  } catch (error) {
+    console.error('Error creating product:', error)
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await auth()
+    
+    // Check authentication
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Check admin role
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    
+    // Get product ID from query params
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      )
+    }
+    
+    // Parse request body
+    const updateData = await request.json()
+    
+    try {
+      // Update product
+      const updatedProduct = await prisma.product.update({
+        where: { id },
+        data: updateData,
+      })
+      
+      return NextResponse.json(updatedProduct)
+    } catch (error) {
+      // Handle record not found error
+      console.error('Error updating product:', error)
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      )
+    }
+  } catch (error) {
+    console.error('Error updating product:', error)
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth()
+    
+    // Check authentication
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    // Check admin role
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    
+    // Get product ID from query params
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      )
+    }
+    
+    try {
+      // Delete product
+      const deletedProduct = await prisma.product.delete({
+        where: { id },
+      })
+      
+      return NextResponse.json(deletedProduct)
+    } catch (error) {
+      // Handle record not found error
+      console.error('Error deleting product:', error)
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      )
+    }
+  } catch (error) {
+    console.error('Error deleting product:', error)
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    )
   }
 }
