@@ -1,0 +1,52 @@
+{
+  "name": "Toplap Store",
+  "short_name": "Toplap",
+  "description": "Магазин инновационной электроники",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Просмотр категорий",
+      "short_name": "Категории",
+      "description": "Просмотр всех категорий товаров",
+      "url": "/categories"
+    },
+    {
+      "name": "Поиск товаров",
+      "short_name": "Поиск",
+      "description": "Поиск товаров по каталогу",
+      "url": "/search"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "label": "Главная страница Toplap Store"
+    },
+    {
+      "src": "/screenshots/products.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "label": "Каталог товаров"
+    }
+  ]
+} 

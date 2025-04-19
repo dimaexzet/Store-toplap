@@ -1,0 +1,18 @@
+# Allow all web crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://toplap.store/sitemap.xml
+
+# Disallow admin area
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+
+# Block specific bots from heavy resources
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: / 
