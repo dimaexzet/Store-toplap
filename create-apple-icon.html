@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Apple Icon</title>
+  <style>
+    canvas {
+      border: 1px solid #000;
+      display: block;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="icon" width="180" height="180"></canvas>
+  <div style="text-align: center;">
+    <p>Иконки созданы. Скачайте их и поместите в папку public вашего проекта:</p>
+    <a id="download1" download="apple-touch-icon.png" href="#">Скачать apple-touch-icon.png</a><br>
+    <a id="download2" download="apple-touch-icon-precomposed.png" href="#">Скачать apple-touch-icon-precomposed.png</a>
+  </div>
+
+  <script>
+    window.onload = function() {
+      // Get the canvas and context
+      const canvas = document.getElementById('icon');
+      const ctx = canvas.getContext('2d');
+      
+      // Draw background
+      ctx.fillStyle = '#333';
+      ctx.fillRect(0, 0, 180, 180);
+      
+      // Draw the letter T
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 120px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('T', 90, 90);
+      
+      // Set download links
+      document.getElementById('download1').href = canvas.toDataURL('image/png');
+      document.getElementById('download2').href = canvas.toDataURL('image/png');
+    };
+  </script>
+</body>
+</html> 

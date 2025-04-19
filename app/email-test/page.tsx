@@ -1,199 +1,136 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { toast } from '@/hooks/use-toast'
-import { Loader2, AlertCircle } from 'lucide-react'
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function EmailTestPage() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
-  const [emailType, setEmailType] = useState('test')
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
-  const [testMode, setTestMode] = useState<boolean | null>(null)
+  const [connectionInfo, setConnectionInfo] = useState<any>(null)
 
-  useEffect(() => {
-    // Fetch environment info to check if test mode is enabled
-    const checkTestMode = async () => {
-      try {
-        const response = await fetch('/api/test/email-config')
-        if (response.ok) {
-          const data = await response.json()
-          setTestMode(data.testMode)
-        }
-      } catch (error) {
-        console.error('Error checking test mode:', error)
-        setTestMode(false)
-      }
+  async function checkConnection() {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/email-debug')
+      const data = await response.json()
+      setConnectionInfo(data)
+      console.log('Email connection info:', data)
+    } catch (error) {
+      console.error('Failed to check connection:', error)
+      setConnectionInfo({ error: String(error) })
+    } finally {
+      setLoading(false)
     }
+  }
 
-    checkTestMode()
-  }, [])
-
-  const handleTestEmail = async () => {
+  async function sendTestEmail() {
     if (!email || !name) {
-      toast({
-        title: 'Error',
-        description: 'Please enter both email and name',
-        variant: 'destructive',
-      })
+      alert('Please enter both email and name')
       return
     }
-
-    setIsLoading(true)
-    setResult(null)
-
+    
     try {
-      // Создаем тестовый ID заказа если необходим
-      const testOrderId = emailType !== 'test' ? `test-${Date.now()}` : undefined
-
-      const response = await fetch('/api/test/email', {
+      setLoading(true)
+      const response = await fetch('/api/test-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          name,
-          type: emailType,
-          orderId: testOrderId
-        }),
+        body: JSON.stringify({ email, name }),
       })
-
+      
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send test email')
-      }
-
       setResult(data)
-      toast({
-        title: 'Success',
-        description: 'Test email sent successfully',
-      })
+      console.log('Test email result:', data)
     } catch (error) {
-      console.error('Test email error:', error)
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to send test email',
-        variant: 'destructive',
-      })
+      console.error('Failed to send test email:', error)
+      setResult({ error: String(error) })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Email Service Test</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8">Email System Test</h1>
       
-      {testMode !== null && (
-        <Alert className={`mb-6 ${testMode ? 'bg-yellow-50' : 'bg-blue-50'}`}>
-          <AlertCircle className={`h-4 w-4 ${testMode ? 'text-yellow-600' : 'text-blue-600'}`} />
-          <AlertDescription>
-            {testMode 
-              ? "Email test mode is ON. Emails will be logged but not actually sent. Set MAILGUN_TESTMODE=false in .env to disable test mode." 
-              : "Email test mode is OFF. Real emails will be sent to recipients. Set MAILGUN_TESTMODE=true in .env to enable test mode."}
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>SMTP Email Test</CardTitle>
-          <CardDescription>
-            Test the email service integration with SMTP
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Recipient Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Recipient Name
-              </label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Your Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="emailType" className="text-sm font-medium">
-                Email Type
-              </label>
-              <Select 
-                defaultValue="test" 
-                onValueChange={setEmailType}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select email type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="test">Test Email</SelectItem>
-                  <SelectItem value="order">Order Confirmation</SelectItem>
-                  <SelectItem value="shipping">Shipping Update</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleTestEmail} disabled={isLoading} className="w-full">
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              'Send Test Email'
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {result && (
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Result</CardTitle>
+            <CardTitle>SMTP Connection Test</CardTitle>
+            <CardDescription>
+              Check if email server connection is working correctly
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="bg-gray-50 p-4 rounded-md overflow-auto">
-              <pre className="text-sm text-gray-700">
-                {JSON.stringify(result, null, 2)}
-              </pre>
+          <CardFooter>
+            <Button 
+              onClick={checkConnection} 
+              disabled={loading}
+            >
+              {loading ? 'Checking...' : 'Check Connection'}
+            </Button>
+          </CardFooter>
+          {connectionInfo && (
+            <CardContent>
+              <div className="p-4 bg-gray-100 rounded-md overflow-auto max-h-80">
+                <pre className="text-xs">{JSON.stringify(connectionInfo, null, 2)}</pre>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Send Test Email</CardTitle>
+            <CardDescription>
+              Send a test email to verify email delivery
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Email Address
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Your Name
+              </label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your Name"
+              />
             </div>
           </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={sendTestEmail} 
+              disabled={loading || !email || !name}
+            >
+              {loading ? 'Sending...' : 'Send Test Email'}
+            </Button>
+          </CardFooter>
+          {result && (
+            <CardContent>
+              <div className="p-4 bg-gray-100 rounded-md overflow-auto max-h-80">
+                <pre className="text-xs">{JSON.stringify(result, null, 2)}</pre>
+              </div>
+            </CardContent>
+          )}
         </Card>
-      )}
+      </div>
     </div>
   )
 } 

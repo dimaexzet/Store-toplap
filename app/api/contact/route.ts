@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { sendContactFormEmail } from '@/lib/email'
+import { sendContactFormEmail, testSmtpConnection } from '@/lib/email'
 
 // Schema for validating contact form data
 const contactFormSchema = z.object({
@@ -33,14 +33,27 @@ const contactFormSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Проверяем SMTP соединение перед отправкой
+    console.log('Testing SMTP connection before processing contact form...');
+    const connectionTest = await testSmtpConnection();
+    
+    if (!connectionTest.success) {
+      console.error('SMTP connection test failed before form processing:', connectionTest.error);
+      // Продолжаем выполнение, так как у нас может быть доступен Resend API
+    } else {
+      console.log('SMTP connection test successful');
+    }
+    
     // Parse the request body
     const body = await request.json()
+    console.log('Received contact form submission:', { ...body, message: body.message?.substring(0, 20) + '...' });
     
     // Validate the data
     const result = contactFormSchema.safeParse(body)
     
     if (!result.success) {
       // Return validation errors
+      console.error('Contact form validation failed:', result.error.format());
       return NextResponse.json(
         { 
           success: false, 
@@ -54,6 +67,7 @@ export async function POST(request: NextRequest) {
     const { name, email, phone, subject, message } = result.data
     
     // Send the email using SMTP
+    console.log('Attempting to send contact form email...');
     const emailResult = await sendContactFormEmail(
       name,
       email,
@@ -62,12 +76,15 @@ export async function POST(request: NextRequest) {
       message
     )
     
+    console.log('Email sending result:', emailResult);
+    
     if (!emailResult.success) {
       console.error('Error sending contact form email:', emailResult.error)
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Failed to send email. Please try again later.' 
+          message: 'Failed to send email. Please try again later.',
+          details: emailResult
         },
         { status: 500 }
       )
@@ -76,7 +93,8 @@ export async function POST(request: NextRequest) {
     // Return success response
     return NextResponse.json({
       success: true,
-      message: 'Contact message sent successfully'
+      message: 'Contact message sent successfully',
+      provider: emailResult.provider
     })
     
   } catch (error) {
@@ -84,7 +102,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        message: 'An unexpected error occurred. Please try again later.' 
+        message: 'An unexpected error occurred. Please try again later.',
+        error: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     )

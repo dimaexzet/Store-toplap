@@ -70,11 +70,19 @@ export function ContactForm() {
     setIsSubmitting(true);
     
     try {
-      // In a real application, there would be an API request here
-      // Simulating request delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
       
-      console.log('Contact form data:', data);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to send message');
+      }
       
       // Clear form and show success message
       form.reset();
@@ -96,7 +104,7 @@ export function ContactForm() {
       
       toast({
         title: "Submission Error",
-        description: "There was an error sending your message. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error sending your message. Please try again.",
         variant: "destructive",
       });
     } finally {

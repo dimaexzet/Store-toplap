@@ -304,4 +304,104 @@ export async function sendPasswordResetEmail(
     console.error('Failed to send password reset email:', error);
     return { success: false, error };
   }
+}
+
+// SMTP Configuration from environment variables
+const smtpConfig = {
+  host: process.env.SMTP_HOST || 'smtp.eu.mailgun.org',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER || 'email@mail.toplap.store',
+    pass: process.env.SMTP_PASSWORD || '123456789',
+  },
+};
+
+// Email addresses
+const CONTACT_EMAIL = 'info@toplap.store';
+
+// Create reusable transporter
+let transporterSmtp: nodemailer.Transporter | null = null;
+
+try {
+  transporterSmtp = nodemailer.createTransport(smtpConfig);
+} catch (error) {
+  console.error('Failed to create SMTP transporter:', error);
+}
+
+/**
+ * Sends a contact form submission email using SMTP
+ */
+export async function sendContactFormEmail(
+  name: string,
+  email: string,
+  phone: string,
+  subject: string,
+  message: string
+) {
+  try {
+    // Skip sending if transporter wasn't initialized
+    if (!transporterSmtp) {
+      console.warn('Email sending skipped - SMTP configuration is missing or invalid');
+      return { success: false, error: 'SMTP configuration not available' };
+    }
+
+    const mailOptions = {
+      from: SENDER_EMAIL,
+      to: CONTACT_EMAIL,
+      replyTo: email,
+      subject: `Contact Form: ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #333;">New Contact Form Submission</h1>
+          
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h2 style="margin-top: 0;">Contact Details</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+            <p><strong>Subject:</strong> ${subject}</p>
+          </div>
+          
+          <div style="margin: 20px 0;">
+            <h2>Message:</h2>
+            <p style="white-space: pre-line;">${message}</p>
+          </div>
+          
+          <p style="color: #666; font-size: 12px;">This message was sent from the contact form on toplap.store</p>
+        </div>
+      `,
+    };
+
+    const info = await transporterSmtp.sendMail(mailOptions);
+    console.log('Message sent: %s', info.messageId);
+    
+    return { success: true, data: info };
+  } catch (error) {
+    console.error('Failed to send contact form email via SMTP:', error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Test the SMTP connection
+ */
+export async function testSmtpConnection() {
+  try {
+    if (!transporterSmtp) {
+      return { success: false, error: 'SMTP configuration not available' };
+    }
+    
+    // Verify SMTP connection
+    const verified = await transporterSmtp.verify();
+    
+    if (verified) {
+      return { success: true, message: 'SMTP connection verified successfully' };
+    } else {
+      return { success: false, error: 'SMTP connection verification failed' };
+    }
+  } catch (error) {
+    console.error('SMTP connection test failed:', error);
+    return { success: false, error };
+  }
 } 

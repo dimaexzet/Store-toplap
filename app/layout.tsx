@@ -71,7 +71,8 @@ export const metadata: Metadata = {
       { url: '/icon.png', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon.png', type: 'image/png' },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon-precomposed.png', sizes: '180x180', type: 'image/png' }
     ],
   },
   manifest: '/manifest.json',
@@ -89,6 +90,8 @@ export default async function RootLayout({
     <html lang='ru'>
       <head>
         <link rel="canonical" href="https://toplap.store" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
         
         {/* Структурированные данные для организации */}
         <Script 
@@ -150,6 +153,23 @@ export default async function RootLayout({
             <Toaster />
           </CartProvider>
         </SessionProvider>
+        {/* Скрипт для отладки email-соединения (удалить в продакшене) */}
+        {process.env.NODE_ENV === 'development' && (
+          <Script id="email-debug">
+            {`
+            async function checkEmailConnection() {
+              try {
+                const response = await fetch('/api/test-email');
+                const data = await response.json();
+                console.log('Email connection status:', data);
+              } catch (error) {
+                console.error('Failed to check email connection:', error);
+              }
+            }
+            checkEmailConnection();
+            `}
+          </Script>
+        )}
       </body>
     </html>
   )
