@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { sendContactFormEmail } from '@/lib/smtp'
+import { sendContactFormEmail } from '@/lib/email'
 
 // Schema for validating contact form data
 const contactFormSchema = z.object({
